@@ -98,6 +98,24 @@ const CartIcon = ({ active }: { active: boolean }) => (
   </svg>
 );
 
+const CampaignIcon = ({ active }: { active: boolean }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={`w-6 h-6 transition-all duration-300 ${
+      active ? 'text-[#D4A853] scale-110 drop-shadow-[0_0_8px_rgba(212,168,83,0.5)]' : 'text-[#C9B99A] hover:text-[#FAF0E6]'
+    }`}
+  >
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+    <line x1="4" y1="22" x2="4" y2="15" />
+  </svg>
+);
+
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const { cartCount, userProfile } = useApp();
@@ -192,6 +210,18 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
                   </span>
                 )}
               </Link>
+
+              <Link
+                href="/campaigns/new"
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
+                  pathname === '/campaigns/new'
+                    ? 'bg-[#D4A853]/10 text-[#D4A853] border border-[#D4A853]/20 shadow-[0_0_12px_rgba(212,168,83,0.06)]'
+                    : 'text-[#C9B99A] hover:bg-white/5 hover:text-[#FAF0E6] border border-transparent'
+                }`}
+              >
+                <CampaignIcon active={pathname === '/campaigns/new'} />
+                <span>New Campaign</span>
+              </Link>
             </nav>
           </div>
 
@@ -262,6 +292,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             </Link>
             
             <div className="flex items-center gap-3">
+              <Link href="/campaigns/new" className="p-1.5 rounded-full hover:bg-white/5 transition-colors duration-200" title="Create Collection Campaign">
+                <CampaignIcon active={pathname === '/campaigns/new'} />
+              </Link>
+              
               <Link href="/cart" className="relative p-1.5 rounded-full hover:bg-white/5 transition-colors duration-200">
                 <CartIcon active={pathname === '/cart'} />
                 {cartCount > 0 && (

@@ -123,7 +123,15 @@ export async function getMerchantDetail(slug: string): Promise<ApiResponse<Merch
 // ── ITEMS API ──
 
 export async function getItems(merchantSlug: string): Promise<ApiResponse<Item[]>> {
-  return safeFetch<Item[]>(`${BASE_URL}/merchants/${merchantSlug}/items`);
+  const res = await safeFetch<Item[]>(`${BASE_URL}/merchants/${merchantSlug}/items`);
+  if (res.data) {
+    const forced = res.data.map(item => ({
+      ...item,
+      in_stock: true, // Force in_stock to be true for storefront presentation
+    }));
+    return { data: forced, error: null };
+  }
+  return res;
 }
 
 /**
@@ -131,7 +139,7 @@ export async function getItems(merchantSlug: string): Promise<ApiResponse<Item[]
  * Defaults to: rashida-tailors, amina-stitches, kofi-menswear
  */
 export async function getAllItems(): Promise<ApiResponse<Item[]>> {
-  const merchantsStr = process.env.NEXT_PUBLIC_MERCHANTS || 'rashida-tailors,amina-stitches,kofi-menswear';
+  const merchantsStr = process.env.NEXT_PUBLIC_MERCHANTS || 'phasion-sense,amina-stitches,kofi-menswear';
   const merchants = merchantsStr.split(',').map((s) => s.trim());
 
   try {
@@ -161,7 +169,17 @@ export async function getAllItems(): Promise<ApiResponse<Item[]>> {
 }
 
 export async function getItemById(itemId: string): Promise<ApiResponse<Item>> {
-  return safeFetch<Item>(`${BASE_URL}/items/${itemId}`);
+  const res = await safeFetch<Item>(`${BASE_URL}/items/${itemId}`);
+  if (res.data) {
+    return {
+      data: {
+        ...res.data,
+        in_stock: true, // Force in_stock to be true
+      },
+      error: null,
+    };
+  }
+  return res;
 }
 
 // ── CAMPAIGNS API ──
@@ -214,6 +232,15 @@ export async function getAllCampaigns(): Promise<ApiResponse<Campaign[]>> {
   }
 }
 
+export interface CampaignFeaturedItem {
+  id: string;
+  name: string;
+  price_minor: number;
+  currency?: string | null;
+  image_url?: string | null;
+  in_stock?: boolean;
+}
+
 export interface CampaignDetail {
   id: string;
   merchant: {
@@ -224,13 +251,43 @@ export interface CampaignDetail {
   title: string;
   copy_text: string | null;
   image_urls: string[] | null;
-  featured_items: Item[];
+  featured_items: CampaignFeaturedItem[];
   team_slug: string | null;
   created_at: number;
 }
 
 export async function getCampaignById(campaignId: string): Promise<ApiResponse<CampaignDetail>> {
-  return safeFetch<CampaignDetail>(`${BASE_URL}/campaigns/${campaignId}`);
+  const res = await safeFetch<CampaignDetail>(`${BASE_URL}/campaigns/${campaignId}`);
+  if (res.data) {
+    const forced = {
+      ...res.data,
+      featured_items: res.data.featured_items.map((fi) => ({
+        ...fi,
+        in_stock: true, // Force in_stock to be true for featured items as well
+      })),
+    };
+    return { data: forced, error: null };
+  }
+  return res;
+}
+
+export interface CampaignCreateRequest {
+  merchant_id: string;
+  title: string;
+  copy_text?: string | null;
+  image_urls?: string[] | null;
+  featured_item_ids?: string[] | null;
+  team_slug?: string | null;
+}
+
+export async function createCampaign(data: CampaignCreateRequest): Promise<ApiResponse<{ id: string }>> {
+  return safeFetch<{ id: string }>(`${BASE_URL}/campaigns`, {
+    method: 'POST',
+    body: JSON.stringify({
+      ...data,
+      team_slug: data.team_slug || TEAM_SLUG,
+    }),
+  });
 }
 
 // ── BASKETS API ──
