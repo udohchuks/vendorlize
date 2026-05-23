@@ -32,6 +32,7 @@ export interface Campaign {
   team_slug: string | null;
   created_at: number;
   featured_items?: Item[];
+  merchant_id?: string | null;
 }
 
 export interface BasketItemInput {
@@ -277,6 +278,62 @@ export function getImageUrl(path: string | null | undefined): string {
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
     return path;
   }
+
+  // Pre-configured premium model/clothing Unsplash images for Phasion Sense catalog items (ps1 to ps15)
+  const psSenseMap: Record<string, string> = {
+    'ps1': 'https://images.unsplash.com/photo-1618886614638-80e3c103d31a?w=600&auto=format&fit=crop&q=80', // Shirt 1 (Model in patterned shirt)
+    'ps2': 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=600&auto=format&fit=crop&q=80', // Shirt 2 (Model in casual shirt)
+    'ps3': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80', // Shirt 3 (Model in white shirt)
+    'ps4': 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=600&auto=format&fit=crop&q=80', // Shirt 4 (Model in black shirt)
+    'ps5': 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=80', // Shirt 5 (Model in linen shirt)
+    'ps6': 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=600&auto=format&fit=crop&q=80', // Shirt 6 (Model in summer shirt)
+    'ps7': 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&auto=format&fit=crop&q=80', // Shirt 7 (Model in classic shirt)
+    'ps8': 'https://images.unsplash.com/photo-1554568218-0f1715e72254?w=600&auto=format&fit=crop&q=80', // Shirt 8 (Model in oversize shirt)
+    'ps9': 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=600&auto=format&fit=crop&q=80', // Shirt 9 (Model in blue shirt)
+    'ps10': 'https://images.unsplash.com/photo-1603252109303-2751441dd157?w=600&auto=format&fit=crop&q=80', // Shirt 10 (Model in formal shirt)
+    'ps11': 'https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=600&auto=format&fit=crop&q=80', // Shirt 11 (Model in vintage shirt)
+    'ps12': 'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&auto=format&fit=crop&q=80', // Two Piece 1 (Model in two piece)
+    'ps13': 'https://images.unsplash.com/photo-1593032465175-481ac7f401a0?w=600&auto=format&fit=crop&q=80', // Two Piece 2 (Model in two piece suit)
+    'ps14': 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&auto=format&fit=crop&q=80', // Two Piece 3 (Model in design two piece)
+    'ps15': 'https://images.unsplash.com/photo-1598808503746-f34c53b20ef3?w=600&auto=format&fit=crop&q=80', // Two Piece 4 (Model in matching set)
+  };
+
+  // Extract ID or filename from path
+  const lowerPath = path.toLowerCase();
+  
+  // Check if it's one of the Phasion Sense items
+  for (const [key, url] of Object.entries(psSenseMap)) {
+    if (lowerPath.includes(key)) {
+      return url;
+    }
+  }
+
+  // Fallback keyword-based premium mapping for other merchants
+  if (lowerPath.includes('dress') || lowerPath.includes('gown') || lowerPath.includes('amina-stitches')) {
+    return 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop&q=80';
+  }
+  if (lowerPath.includes('suit') || lowerPath.includes('blazer') || lowerPath.includes('kofi-menswear')) {
+    return 'https://images.unsplash.com/photo-1593032465175-481ac7f401a0?w=600&auto=format&fit=crop&q=80';
+  }
+  if (lowerPath.includes('shirt') || lowerPath.includes('t-shirt') || lowerPath.includes('top')) {
+    return 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=600&auto=format&fit=crop&q=80';
+  }
+  if (lowerPath.includes('trouser') || lowerPath.includes('pant') || lowerPath.includes('short') || lowerPath.includes('denim')) {
+    return 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600&auto=format&fit=crop&q=80';
+  }
+  if (lowerPath.includes('agbada') || lowerPath.includes('kaftan') || lowerPath.includes('traditional') || lowerPath.includes('rashida-tailors')) {
+    return 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=600&auto=format&fit=crop&q=80';
+  }
+  if (lowerPath.includes('sandals') || lowerPath.includes('slippers') || lowerPath.includes('shoes')) {
+    return 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=600&auto=format&fit=crop&q=80';
+  }
+  if (lowerPath.includes('cap') || lowerPath.includes('fila') || lowerPath.includes('tie') || lowerPath.includes('pocket')) {
+    return 'https://images.unsplash.com/photo-1614179924047-e1cb4e815f67?w=600&auto=format&fit=crop&q=80';
+  }
+  if (lowerPath.includes('logo') || lowerPath.includes('brand')) {
+    return 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80';
+  }
+
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   return `${BASE_URL}${cleanPath}`;
 }

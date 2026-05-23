@@ -100,9 +100,15 @@ const CartIcon = ({ active }: { active: boolean }) => (
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
-  const { cartCount } = useApp();
+  const { cartCount, userProfile } = useApp();
 
   const isOnboarding = pathname === '/onboarding';
+
+  const avatarUrl = userProfile
+    ? userProfile.gender === 'male'
+      ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+      : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'
+    : null;
 
   return (
     <div className="w-full min-h-screen bg-[#0A0A0A] text-[#FAF0E6] flex flex-col">
@@ -121,14 +127,26 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               </span>
             </Link>
             
-            <Link href="/cart" className="relative p-1.5 rounded-full hover:bg-white/5 transition-colors duration-200">
-              <CartIcon active={pathname === '/cart'} />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#D4A853] to-[#C9B99A] text-[#0A0A0A] text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border border-[#111111] shadow-[0_0_8px_rgba(212,168,83,0.4)] animate-pulse">
-                  {cartCount}
-                </span>
+            <div className="flex items-center gap-3">
+              <Link href="/cart" className="relative p-1.5 rounded-full hover:bg-white/5 transition-colors duration-200">
+                <CartIcon active={pathname === '/cart'} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#D4A853] to-[#C9B99A] text-[#0A0A0A] text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border border-[#111111] shadow-[0_0_8px_rgba(212,168,83,0.4)] animate-pulse">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+              
+              {avatarUrl && (
+                <Link href="/studio" className="w-8 h-8 rounded-full overflow-hidden border border-[#1F1C1A] hover:border-[#D4A853]/60 transition-all duration-300 flex-shrink-0">
+                  <img
+                    src={avatarUrl}
+                    alt={userProfile?.name || 'User Profile'}
+                    className="w-full h-full object-cover"
+                  />
+                </Link>
               )}
-            </Link>
+            </div>
           </header>
         )}
 

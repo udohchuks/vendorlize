@@ -41,7 +41,6 @@ export default function CartPage() {
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     setIsSubmitting(true);
-    setError(null);
     setCheckoutSteps([]);
 
     const steps = [];

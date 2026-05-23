@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { getImageUrl } from '@/lib/api';
@@ -31,6 +31,16 @@ export default function StudioPage() {
   const [fitResult, setFitResult] = useState<string | null>(null); // Url of tried on garment
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  
+  // Custom Photo Upload States
+  const [modelSource, setModelSource] = useState<'avatar' | 'upload'>('avatar');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  
+  // Drag / Scale states for overlay fitting
+  const [overlayPos, setOverlayPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [overlayScale, setOverlayScale] = useState<number>(0.95);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const dragStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const handleShowToast = (message: string, type: 'success' | 'error') => {
     setToastMessage(message);
@@ -42,8 +52,53 @@ export default function StudioPage() {
     return merchant ? merchant.name : 'Luxury Tailor';
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      handleShowToast('Image size exceeds 5MB limit.', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUploadedImage(reader.result as string);
+      setFitResult(null); // Reset try on for new photo
+      setOverlayPos({ x: 0, y: 0 });
+      setOverlayScale(0.95);
+      handleShowToast('Personal fitting photo uploaded!', 'success');
+    };
+    reader.onerror = () => {
+      handleShowToast('Failed to read image file.', 'error');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+    dragStart.current = { x: e.clientX - overlayPos.x, y: e.clientY - overlayPos.y };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    setOverlayPos({
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y,
+    });
+  };
+
+  const handlePointerUp = () => {
+    setIsDragging(false);
+  };
+
   const handleTryOn = () => {
     if (wishlist.length === 0) return;
+    if (modelSource === 'upload' && !uploadedImage) {
+      handleShowToast('Please upload a photo first.', 'error');
+      return;
+    }
     setIsFitting(true);
     setFitResult(null);
 
@@ -62,6 +117,8 @@ export default function StudioPage() {
 
   const handleResetFit = () => {
     setFitResult(null);
+    setOverlayPos({ x: 0, y: 0 });
+    setOverlayScale(0.95);
   };
 
   // --- RENDERS FOR MISSING STATES ---
@@ -123,7 +180,7 @@ export default function StudioPage() {
   const activeGarment = wishlist[selectedGarmentIndex];
 
   return (
-    <div className="flex-1 bg-[#111111] min-h-screen flex flex-col px-6 py-6 space-y-6 animate-fade-in pb-28">
+    <div className="flex-1 bg-[#111111] min-h-screen flex flex-col px-6 py-6 space-y-5 animate-fade-in pb-28">
       
       {/* Studio Header */}
       <div className="flex items-center justify-between">
@@ -153,84 +210,225 @@ export default function StudioPage() {
         </div>
       </div>
 
+      {/* Model Source Toggle */}
+      <div className="bg-[#0A0A0A] border border-[#1F1C1A] rounded-2xl p-1 flex w-full">
+        <button
+          onClick={() => {
+            setModelSource('avatar');
+            handleResetFit();
+          }}
+          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
+            modelSource === 'avatar' ? 'bg-gradient-to-r from-[#D4A853] to-[#C9B99A] text-[#0A0A0A]' : 'text-[#C9B99A]'
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+          </svg>
+          AI Fitted Avatar
+        </button>
+        <button
+          onClick={() => {
+            setModelSource('upload');
+            handleResetFit();
+          }}
+          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
+            modelSource === 'upload' ? 'bg-gradient-to-r from-[#D4A853] to-[#C9B99A] text-[#0A0A0A]' : 'text-[#C9B99A]'
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+          </svg>
+          Upload Photo
+        </button>
+      </div>
+
       {/* Main Simulation Viewport Container */}
       <div className="w-full flex-1 aspect-[3/4] bg-[#0A0A0A] border border-[#1F1C1A] rounded-3xl relative overflow-hidden flex items-center justify-center shadow-inner">
         {/* Subtle Luxury grid background */}
-        <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(#FAF0E6_1px,transparent_1px)] [background-size:20px_20px]" />
+        <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(#FAF0E6_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
         
         {isFitting ? (
           // Simulation Processing loader screen
-          <div className="flex flex-col items-center justify-center space-y-5 px-6 text-center z-10 animate-pulse">
+          <div className="flex flex-col items-center justify-center space-y-5 px-6 text-center z-10 animate-pulse pointer-events-none">
             <div className="w-16 h-16 rounded-full border-2 border-[#D4A853] border-t-transparent animate-spin" />
             <div className="space-y-1">
               <span className="text-[10px] font-extrabold tracking-widest text-[#D4A853] uppercase">AI Bespoke Sizing Slicing</span>
               <p className="text-xs text-[#C9B99A]/80 font-medium">Aligning shoulder points and waist contours...</p>
             </div>
           </div>
-        ) : fitResult ? (
-          // Try On Completed Render View
-          <div className="w-full h-full relative flex items-center justify-center animate-fade-in p-6">
-            
-            {/* Split screen: silhouette behind, actual product overlay floating with opacity */}
-            <div className="absolute opacity-20 pointer-events-none">
-              {userProfile.gender === 'male' ? (
-                <MaleSilhouette bodyType={userProfile.bodyType} />
-              ) : (
-                <FemaleSilhouette bodyType={userProfile.bodyType} />
-              )}
-            </div>
-
-            {/* Simulated garment overlay */}
-            <div className="w-full max-w-[220px] aspect-[3/4] rounded-2xl overflow-hidden border border-[#D4A853]/45 shadow-[0_0_32px_rgba(212,168,83,0.18)] bg-[#181615]">
-              <img
-                src={fitResult}
-                alt="AI Fitted Result"
-                className="w-full h-full object-cover animate-fade-in"
+        ) : modelSource === 'upload' && !uploadedImage ? (
+          // Custom Upload Zone
+          <div className="flex flex-col items-center justify-center space-y-5 p-6 w-full h-full text-center">
+            <div className="w-full max-w-[280px] p-8 border-2 border-dashed border-[#1F1C1A] hover:border-[#D4A853]/50 rounded-3xl bg-[#111111]/30 transition-all flex flex-col items-center justify-center space-y-4 group cursor-pointer relative shadow-lg">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="absolute inset-0 opacity-0 cursor-pointer z-10"
               />
-            </div>
-
-            {/* Glowing fit markers overlay */}
-            <div className="absolute top-[28%] left-[45%] w-3 h-3 rounded-full bg-[#25D366] shadow-[0_0_8px_#25D366] animate-ping" />
-            <div className="absolute top-[50%] left-[38%] w-3 h-3 rounded-full bg-[#25D366] shadow-[0_0_8px_#25D366] animate-ping" />
-            
-            <div className="absolute bottom-4 left-4 right-4 bg-[#111111]/90 backdrop-blur-md border border-[#1F1C1A] rounded-2xl p-3 flex justify-between items-center shadow-lg">
-              <div className="space-y-0.5">
-                <span className="text-[8px] font-black text-[#D4A853] uppercase tracking-widest">FIT VERDICT</span>
-                <h4 className="text-[10px] font-bold text-[#FAF0E6] truncate uppercase">{activeGarment.name}</h4>
+              <div className="w-14 h-14 rounded-full bg-[#0A0A0A] border border-[#1F1C1A] group-hover:border-[#D4A853]/45 flex items-center justify-center text-[#C9B99A]/50 group-hover:text-[#D4A853] transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
               </div>
-              <span className="bg-[#25D366]/15 text-[#25D366] border border-[#25D366]/30 text-[8px] font-black tracking-widest px-2.5 py-1 rounded-md uppercase">
-                Bespoke Fit Perfect
-              </span>
+              <div className="space-y-1">
+                <h4 className="text-xs font-black text-[#FAF0E6] uppercase tracking-wider">Upload Selfie/Photo</h4>
+                <p className="text-[10px] text-[#C9B99A]/60 max-w-[200px] leading-relaxed font-semibold">
+                  Select a portrait or front-facing picture to simulate fittings directly on your body.
+                </p>
+              </div>
             </div>
           </div>
         ) : (
-          // Simulation Standby State View
-          <div className="flex flex-col items-center justify-center space-y-6 p-6 text-center z-10">
-            {/* User SVG Silhouette */}
-            <div className="p-4 bg-[#111111] border border-[#1F1C1A] rounded-2xl shadow-lg relative group">
-              {userProfile.gender === 'male' ? (
-                <MaleSilhouette bodyType={userProfile.bodyType} />
-              ) : (
-                <FemaleSilhouette bodyType={userProfile.bodyType} />
-              )}
-              {/* Scanning visual bar overlay */}
-              <div className="absolute left-0 right-0 top-0 h-0.5 bg-[#D4A853] shadow-[0_0_8px_#D4A853] animate-[bounce_3s_infinite_linear]" />
-            </div>
+          // Show interactive model/try-on viewport
+          <div className="w-full h-full relative flex items-center justify-center animate-fade-in overflow-hidden">
             
-            <div className="space-y-1">
-              <span className="text-[10px] font-extrabold tracking-wider text-[#C9B99A]/50 uppercase">STUDIO STANDBY</span>
-              <h3 className="text-xs font-bold text-[#FAF0E6] uppercase">AI Sizing Simulator</h3>
-              <p className="text-[10px] text-[#C9B99A]/75 max-w-[220px] leading-relaxed font-semibold">
-                Select a customized garment below to virtually render over your silhouette model.
-              </p>
-            </div>
+            {/* Background Model Source (AI Silhouette vs Uploaded Photo) */}
+            {modelSource === 'upload' && uploadedImage ? (
+              <img
+                src={uploadedImage}
+                alt="Custom User Fitting Model"
+                className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              />
+            ) : (
+              /* AI Silhouette */
+              <div className={`absolute transition-all duration-300 flex items-center justify-center ${fitResult ? 'opacity-20 pointer-events-none' : ''}`}>
+                <div className="p-4 bg-[#111111] border border-[#1F1C1A] rounded-2xl shadow-lg relative group">
+                  {userProfile.gender === 'male' ? (
+                    <MaleSilhouette bodyType={userProfile.bodyType} />
+                  ) : (
+                    <FemaleSilhouette bodyType={userProfile.bodyType} />
+                  )}
+                  {/* Standby scanning line */}
+                  {!fitResult && (
+                    <div className="absolute left-0 right-0 top-0 h-0.5 bg-[#D4A853] shadow-[0_0_8px_#D4A853] animate-[bounce_3s_infinite_linear]" />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Simulated Garment Overlay */}
+            {fitResult ? (
+              modelSource === 'upload' ? (
+                /* INTERACTIVE DRAPING GARMENT (For Upload Mode) */
+                <div
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerLeave={handlePointerUp}
+                  style={{
+                    transform: `translate(${overlayPos.x}px, ${overlayPos.y}px) scale(${overlayScale})`,
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    touchAction: 'none',
+                  }}
+                  className="w-full max-w-[210px] aspect-[3/4] rounded-2xl overflow-hidden border border-[#D4A853]/60 shadow-[0_0_32px_rgba(212,168,83,0.3)] bg-transparent relative z-20 transition-shadow duration-300 select-none"
+                >
+                  <img
+                    src={fitResult}
+                    alt="AI Fitted Result"
+                    className="w-full h-full object-cover pointer-events-none select-none"
+                  />
+                  {/* Glowing Alignment Guides */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#D4A853] animate-ping" />
+                </div>
+              ) : (
+                /* STATIC AI ALIGNED GARMENT (For Silhouette Mode) */
+                <div className="w-full max-w-[220px] aspect-[3/4] rounded-2xl overflow-hidden border border-[#D4A853]/45 shadow-[0_0_32px_rgba(212,168,83,0.18)] bg-[#181615] relative z-10">
+                  <img
+                    src={fitResult}
+                    alt="AI Fitted Result"
+                    className="w-full h-full object-cover pointer-events-none"
+                  />
+                  {/* Static glowing markers */}
+                  <div className="absolute top-[28%] left-[45%] w-3 h-3 rounded-full bg-[#25D366] shadow-[0_0_8px_#25D366] animate-ping" />
+                  <div className="absolute top-[50%] left-[38%] w-3 h-3 rounded-full bg-[#25D366] shadow-[0_0_8px_#25D366] animate-ping" />
+                </div>
+              )
+            ) : modelSource === 'upload' && uploadedImage ? (
+              /* Custom Photo Standby scan overlay */
+              <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                <div className="absolute left-0 right-0 top-0 h-0.5 bg-[#D4A853] shadow-[0_0_8px_#D4A853] animate-[bounce_3s_infinite_linear]" />
+                <span className="bg-[#0A0A0A]/85 border border-[#1F1C1A] text-[#D4A853] text-[9px] font-black tracking-widest px-3 py-1.5 rounded-xl uppercase backdrop-blur-sm mt-auto mb-4">
+                  Scanner Active • Select Garment
+                </span>
+              </div>
+            ) : null}
+
+            {/* Standby description (Silhouette Mode) */}
+            {!fitResult && modelSource === 'avatar' && (
+              <div className="absolute bottom-4 left-4 right-4 bg-[#111111]/90 backdrop-blur-md border border-[#1F1C1A] rounded-2xl p-3 text-center shadow-lg pointer-events-none">
+                <span className="text-[8px] font-extrabold tracking-wider text-[#C9B99A]/50 uppercase">STUDIO STANDBY</span>
+                <p className="text-[10px] text-[#C9B99A]/75 font-semibold mt-0.5">Select a customized garment below to render.</p>
+              </div>
+            )}
+
+            {/* Completed Verdict Overlay */}
+            {fitResult && (
+              <div className="absolute bottom-4 left-4 right-4 bg-[#111111]/95 backdrop-blur-md border border-[#1F1C1A] rounded-2xl p-3.5 flex justify-between items-center shadow-lg z-30 pointer-events-none">
+                <div className="space-y-0.5">
+                  <span className="text-[8px] font-black text-[#D4A853] uppercase tracking-widest">FIT VERDICT</span>
+                  <h4 className="text-[10px] font-bold text-[#FAF0E6] truncate uppercase max-w-[140px]">{activeGarment.name}</h4>
+                </div>
+                <span className="bg-[#25D366]/15 text-[#25D366] border border-[#25D366]/30 text-[8px] font-black tracking-widest px-2.5 py-1 rounded-md uppercase">
+                  {modelSource === 'upload' ? 'Interactive Overlay' : 'Bespoke Fit Perfect'}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
 
+      {/* Resize / Scale Controls (Only when photo is uploaded and ready) */}
+      {modelSource === 'upload' && uploadedImage && (
+        <div className="bg-[#0A0A0A] border border-[#1F1C1A] rounded-2xl p-4 space-y-3.5 shadow-lg animate-fade-in">
+          {fitResult ? (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-[10px] font-extrabold tracking-wider text-[#C9B99A] uppercase">
+                <span>Garment Size Scale</span>
+                <span className="text-[#D4A853] font-black">{Math.round(overlayScale * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.4"
+                max="1.6"
+                step="0.01"
+                value={overlayScale}
+                onChange={(e) => setOverlayScale(parseFloat(e.target.value))}
+                className="w-full h-1 bg-[#1F1C1A] rounded-lg appearance-none cursor-pointer accent-[#D4A853]"
+              />
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-[9px] text-[#C9B99A]/50 font-bold uppercase">← Drag garment inside viewport to align →</span>
+                <button
+                  onClick={() => {
+                    setUploadedImage(null);
+                    setFitResult(null);
+                  }}
+                  className="text-[9px] text-red-500 font-bold uppercase hover:underline"
+                >
+                  Remove Photo
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-between items-center py-1">
+              <span className="text-[10px] text-[#C9B99A]/75 font-semibold">Fitting photo loaded.</span>
+              <button
+                onClick={() => {
+                  setUploadedImage(null);
+                  setFitResult(null);
+                }}
+                className="text-[10px] text-red-500 font-bold uppercase hover:underline"
+              >
+                Change Photo
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Dynamic bottom action row (if fit result is loaded) */}
       {fitResult ? (
-        <div className="grid grid-cols-3 gap-3 pt-2">
+        <div className="grid grid-cols-3 gap-3 pt-1">
           <button
             onClick={() => handleShowToast('Custom Look saved to your studio locker!', 'success')}
             className="py-3.5 border border-[#1F1C1A] bg-[#0A0A0A] hover:border-[#FAF0E6]/25 rounded-2xl text-[10px] font-bold text-[#FAF0E6] tracking-wider uppercase transition-colors"
@@ -252,7 +450,7 @@ export default function StudioPage() {
         </div>
       ) : (
         // Garment Selector and Primary Try On CTA (Standby)
-        <div className="space-y-5 pt-2">
+        <div className="space-y-4 pt-1">
           {/* Wishlist apparel swiper list */}
           <div className="space-y-2">
             <span className="text-[10px] font-extrabold tracking-[0.25em] text-[#C9B99A] uppercase">Select Apparel coordinate</span>
@@ -265,7 +463,10 @@ export default function StudioPage() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setSelectedGarmentIndex(idx)}
+                    onClick={() => {
+                      setSelectedGarmentIndex(idx);
+                      setFitResult(null); // Reset completed render to preview standby
+                    }}
                     className={`w-16 h-20 rounded-xl bg-[#181615] overflow-hidden border flex-shrink-0 flex items-center justify-center transition-all duration-300 relative ${
                       isSelected
                         ? 'border-[#D4A853] ring-1 ring-[#D4A853] scale-105 shadow-[0_0_12px_rgba(212,168,83,0.25)]'
@@ -290,7 +491,9 @@ export default function StudioPage() {
             onClick={handleTryOn}
             className="w-full py-4 bg-gradient-to-r from-[#D4A853] to-[#C9B99A] hover:from-[#C29642] hover:to-[#B5A586] text-[#0A0A0A] font-black text-xs rounded-2xl tracking-wider uppercase shadow-[0_4px_16px_rgba(212,168,83,0.2)] hover:shadow-[0_4px_24px_rgba(212,168,83,0.35)] transition-all duration-300"
           >
-            Render Sizing Fit • "{activeGarment.name}"
+            {modelSource === 'upload' && !uploadedImage
+              ? 'Upload a photo first'
+              : `Render Sizing Fit • "${activeGarment.name}"`}
           </button>
         </div>
       )}

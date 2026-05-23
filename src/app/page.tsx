@@ -17,6 +17,7 @@ import { CampaignCard } from '@/components/CampaignCard';
 import { ProductDetailSheet } from '@/components/ProductDetailSheet';
 import { SkeletonGrid } from '@/components/SkeletonGrid';
 import { Toast } from '@/components/Toast';
+import { TikTokProductFeed } from '@/components/TikTokProductFeed';
 
 const CATEGORIES = ['All', 'Traditional', 'Suits', 'Dresses', 'Shirts', 'Trousers', 'Casual'];
 
@@ -181,35 +182,11 @@ export default function HomePage() {
             </button>
           </div>
         ) : activeTab === 'explore' ? (
-          // --- EXPLORE TAB VIEW ---
-          <div className="space-y-6 animate-fade-in">
-            {/* Campaign Slider */}
-            {campaigns.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-extrabold tracking-[0.25em] text-[#C9B99A] uppercase">Tailored Collections</span>
-                <div className="w-full overflow-x-auto no-scrollbar flex gap-4 pb-2 snap-x snap-mandatory">
-                  {campaigns.map((camp) => (
-                    <div key={camp.id} className="w-[88vw] max-w-[380px] flex-shrink-0 snap-start snap-always">
-                      <CampaignCard
-                        campaign={camp}
-                        merchantName={getMerchantName(camp.merchant_id || camp.team_slug || '')}
-                        onExplore={(c) => {
-                          if (c.featured_items && c.featured_items.length > 0) {
-                            setActiveProduct(c.featured_items[0]);
-                          } else {
-                            handleShowToast(`Opening ${c.title} collection!`, 'success');
-                          }
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
+          // --- EXPLORE TAB VIEW (TIKTOK STYLE) ---
+          <div className="space-y-4 animate-fade-in flex-1 flex flex-col h-full">
             {/* Category Pills */}
-            <div className="space-y-2.5">
-              <span className="text-[10px] font-extrabold tracking-[0.25em] text-[#C9B99A] uppercase">Shop By Style Category</span>
+            <div className="space-y-1">
+              <span className="text-[9px] font-extrabold tracking-wider text-[#C9B99A]/60 uppercase">Tailored Swipe Feed</span>
               <CategoryPills
                 categories={CATEGORIES}
                 selectedCategory={selectedCategory}
@@ -217,33 +194,20 @@ export default function HomePage() {
               />
             </div>
 
-            {/* 2-column Product Grid */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-extrabold tracking-[0.25em] text-[#C9B99A] uppercase">Catalog Showcase</span>
-                <span className="text-[10px] text-[#C9B99A]/50 font-bold">{filteredExploreItems.length} items found</span>
+            {filteredExploreItems.length > 0 ? (
+              <TikTokProductFeed
+                items={filteredExploreItems}
+                getMerchantName={getMerchantName}
+                onShowToast={handleShowToast}
+              />
+            ) : (
+              <div className="p-12 text-center border border-[#1F1C1A] rounded-2xl bg-[#0A0A0A] flex-1 flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-10 h-10 text-[#C9B99A]/40 mx-auto mb-3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
+                </svg>
+                <p className="text-xs font-semibold text-[#C9B99A]">No items available in this category.</p>
               </div>
-              
-              {filteredExploreItems.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {filteredExploreItems.map((item) => (
-                    <ProductCard
-                      key={item.id}
-                      item={item}
-                      merchantName={getMerchantName(item.merchant_id)}
-                      onTap={setActiveProduct}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-12 text-center border border-[#1F1C1A] rounded-2xl bg-[#0A0A0A]">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-10 h-10 text-[#C9B99A]/40 mx-auto mb-3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
-                  </svg>
-                  <p className="text-xs font-semibold text-[#C9B99A]">No items available in this category.</p>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         ) : (
           // --- FOR YOU TAB VIEW ---
@@ -261,19 +225,25 @@ export default function HomePage() {
                 </p>
               </div>
               
-              {/* Mini SVG Silhouette Badge */}
-              <div className="w-12 h-16 rounded-xl border border-[#1F1C1A] bg-[#0A0A0A] flex items-center justify-center flex-shrink-0">
-                <svg viewBox="0 0 100 200" className="w-6 h-12 stroke-[#D4A853] fill-none stroke-[2.5]">
-                  <circle cx="50" cy="25" r="12" />
-                  <path d="M50 37v55M32 50h36 M40 92v88M60 92v88" />
-                </svg>
+              {/* Custom Model Avatar Badge */}
+              <div className="w-12 h-16 rounded-xl border border-[#1F1C1A] bg-[#0A0A0A] overflow-hidden flex-shrink-0 relative group">
+                <img
+                  src={
+                    userProfile.gender === 'male'
+                      ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                      : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'
+                  }
+                  alt={userProfile.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-[#D4A853]/10" />
               </div>
             </div>
 
             {/* Personalized Product Grid */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-extrabold tracking-[0.25em] text-[#C9B99A] uppercase">PIKED FOR YOUR SILHOUETTE</span>
+                <span className="text-[10px] font-extrabold tracking-[0.25em] text-[#C9B99A] uppercase">PICKED FOR YOUR SILHOUETTE</span>
                 <span className="text-[10px] text-[#D4A853] font-bold tracking-wider uppercase">AI MATCH ACTIVE</span>
               </div>
 

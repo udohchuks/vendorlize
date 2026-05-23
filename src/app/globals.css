@@ -1,6 +1,6 @@
-@import "tailwindcss";
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
 
 @theme {
   /* Premium Phasion Sense Color Tokens */
@@ -107,4 +107,22 @@ body {
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Scroll Snap Utilities for TikTok-style feed */
+.snap-container-y {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-container-y::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.snap-item-y {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
