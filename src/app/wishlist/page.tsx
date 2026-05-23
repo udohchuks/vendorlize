@@ -75,7 +75,7 @@ export default function WishlistPage() {
             <span className="text-[10px] font-extrabold tracking-wider text-[#C9B99A]/60 uppercase">
               WISHLISTED ITEMS ({filteredWishlist.length})
             </span>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {filteredWishlist.map((item) => (
                 <ProductCard
                   key={item.id}

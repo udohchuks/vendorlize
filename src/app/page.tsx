@@ -195,11 +195,13 @@ export default function HomePage() {
             </div>
 
             {filteredExploreItems.length > 0 ? (
-              <TikTokProductFeed
-                items={filteredExploreItems}
-                getMerchantName={getMerchantName}
-                onShowToast={handleShowToast}
-              />
+              <div className="w-full max-w-[420px] mx-auto animate-fade-in">
+                <TikTokProductFeed
+                  items={filteredExploreItems}
+                  getMerchantName={getMerchantName}
+                  onShowToast={handleShowToast}
+                />
+              </div>
             ) : (
               <div className="p-12 text-center border border-[#1F1C1A] rounded-2xl bg-[#0A0A0A] flex-1 flex flex-col items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-10 h-10 text-[#C9B99A]/40 mx-auto mb-3">
@@ -248,7 +250,7 @@ export default function HomePage() {
               </div>
 
               {personalizedItems.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {personalizedItems.map((item) => (
                     <div key={item.id} className="relative group">
                       <ProductCard

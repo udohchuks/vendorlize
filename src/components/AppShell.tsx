@@ -111,13 +111,147 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     : null;
 
   return (
-    <div className="w-full min-h-screen bg-[#0A0A0A] text-[#FAF0E6] flex flex-col">
-      {/* Mobile-sized Device Container Centered */}
-      <div className="w-full max-w-[430px] mx-auto min-h-screen bg-[#111111] shadow-2xl relative flex flex-col border-x border-[#1F1C1A] overflow-hidden">
+    <div className="w-full min-h-screen bg-[#0A0A0A] text-[#FAF0E6] flex flex-col md:flex-row">
+      {/* Desktop Sidebar: Visible only on md and above */}
+      {!isOnboarding && (
+        <aside className="hidden md:flex md:w-[280px] md:flex-shrink-0 md:flex-col md:bg-[#111111] md:border-r md:border-[#1F1C1A] md:p-6 md:sticky md:top-0 md:h-screen md:justify-between z-45">
+          <div className="space-y-8">
+            {/* Elegant Header */}
+            <Link href="/" className="flex flex-col group">
+              <span className="text-xl font-bold tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-[#FAF0E6] via-[#D4A853] to-[#C9B99A] group-hover:opacity-90 transition-opacity duration-300 uppercase">
+                Clothify
+              </span>
+              <span className="text-[9px] font-medium tracking-[0.3em] text-[#C9B99A] uppercase">
+                powered by phasion sense
+              </span>
+            </Link>
+
+            {/* Navigation links stack */}
+            <nav className="flex flex-col gap-2.5">
+              <Link
+                href="/"
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
+                  pathname === '/'
+                    ? 'bg-[#D4A853]/10 text-[#D4A853] border border-[#D4A853]/20 shadow-[0_0_12px_rgba(212,168,83,0.06)]'
+                    : 'text-[#C9B99A] hover:bg-white/5 hover:text-[#FAF0E6] border border-transparent'
+                }`}
+              >
+                <HomeIcon active={pathname === '/'} />
+                <span>Home</span>
+              </Link>
+
+              <Link
+                href="/search"
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
+                  pathname === '/search'
+                    ? 'bg-[#D4A853]/10 text-[#D4A853] border border-[#D4A853]/20 shadow-[0_0_12px_rgba(212,168,83,0.06)]'
+                    : 'text-[#C9B99A] hover:bg-white/5 hover:text-[#FAF0E6] border border-transparent'
+                }`}
+              >
+                <SearchIcon active={pathname === '/search'} />
+                <span>Search</span>
+              </Link>
+
+              <Link
+                href="/studio"
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
+                  pathname === '/studio'
+                    ? 'bg-[#D4A853]/10 text-[#D4A853] border border-[#D4A853]/20 shadow-[0_0_12px_rgba(212,168,83,0.06)]'
+                    : 'text-[#C9B99A] hover:bg-white/5 hover:text-[#FAF0E6] border border-transparent'
+                }`}
+              >
+                <StudioIcon active={pathname === '/studio'} />
+                <span>Studio</span>
+              </Link>
+
+              <Link
+                href="/wishlist"
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
+                  pathname === '/wishlist'
+                    ? 'bg-[#D4A853]/10 text-[#D4A853] border border-[#D4A853]/20 shadow-[0_0_12px_rgba(212,168,83,0.06)]'
+                    : 'text-[#C9B99A] hover:bg-white/5 hover:text-[#FAF0E6] border border-transparent'
+                }`}
+              >
+                <WishlistIcon active={pathname === '/wishlist'} />
+                <span>Wishlist</span>
+              </Link>
+
+              <Link
+                href="/cart"
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-300 relative ${
+                  pathname === '/cart'
+                    ? 'bg-[#D4A853]/10 text-[#D4A853] border border-[#D4A853]/20 shadow-[0_0_12px_rgba(212,168,83,0.06)]'
+                    : 'text-[#C9B99A] hover:bg-white/5 hover:text-[#FAF0E6] border border-transparent'
+                }`}
+              >
+                <CartIcon active={pathname === '/cart'} />
+                <span>Cart</span>
+                {cartCount > 0 && (
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 bg-gradient-to-r from-[#D4A853] to-[#C9B99A] text-[#0A0A0A] text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(212,168,83,0.4)]">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            </nav>
+          </div>
+
+          {/* User Profile Visualizer */}
+          {userProfile ? (
+            <div className="bg-[#0A0A0A] border border-[#1F1C1A] rounded-2xl p-4 space-y-3.5 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full overflow-hidden border border-[#D4A853]/45 flex-shrink-0">
+                  <img
+                    src={avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'}
+                    alt={userProfile.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="space-y-0.5 truncate">
+                  <h4 className="text-[11px] font-bold text-[#FAF0E6] truncate">{userProfile.name}</h4>
+                  <span className="text-[8px] font-extrabold text-[#D4A853] uppercase tracking-wider capitalize">{userProfile.bodyType} Shape</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 pt-3 border-t border-[#1F1C1A] text-[9px] font-bold uppercase tracking-wider text-[#C9B99A]/80">
+                <div className="space-y-0.5">
+                  <span className="block text-[7px] text-[#C9B99A]/45">Chest</span>
+                  <span className="text-[#FAF0E6]">{userProfile.measurements.chest}"</span>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="block text-[7px] text-[#C9B99A]/45">Waist</span>
+                  <span className="text-[#FAF0E6]">{userProfile.measurements.waist}"</span>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="block text-[7px] text-[#C9B99A]/45">Hips</span>
+                  <span className="text-[#FAF0E6]">{userProfile.measurements.hips}"</span>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="block text-[7px] text-[#C9B99A]/45">Height</span>
+                  <span className="text-[#FAF0E6]">{userProfile.measurements.height}"</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href="/onboarding"
+              className="w-full py-3.5 bg-gradient-to-r from-[#D4A853] to-[#C9B99A] text-[#0A0A0A] font-black text-[9px] tracking-wider text-center uppercase rounded-xl hover:shadow-[0_0_12px_rgba(212,168,83,0.25)] transition-all"
+            >
+              Setup Fit Profile
+            </Link>
+          )}
+        </aside>
+      )}
+
+      {/* Main Workspace Frame */}
+      <div className={`w-full min-h-screen bg-[#111111] relative flex flex-col ${
+        isOnboarding
+          ? 'max-w-[430px] mx-auto border-x border-[#1F1C1A] shadow-2xl'
+          : 'md:max-w-none md:mx-0 md:border-none md:shadow-none md:flex-1 md:h-screen md:overflow-y-auto'
+      }`}>
         
-        {/* Elegant Top Header (Sticky) - Hidden on Onboarding */}
+        {/* Elegant Top Header (Sticky) - Hidden on desktop and onboarding */}
         {!isOnboarding && (
-          <header className="sticky top-0 z-40 bg-[#111111]/90 backdrop-blur-md border-b border-[#1F1C1A] px-6 py-4 flex items-center justify-between">
+          <header className="sticky top-0 z-40 bg-[#111111]/90 backdrop-blur-md border-b border-[#1F1C1A] px-6 py-4 flex items-center justify-between md:hidden">
             <Link href="/" className="flex flex-col group">
               <span className="text-xl font-bold tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-[#FAF0E6] via-[#D4A853] to-[#C9B99A] group-hover:opacity-90 transition-opacity duration-300 uppercase">
                 Clothify
@@ -151,13 +285,13 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col pb-24 overflow-x-hidden">
+        <main className={`flex-1 flex flex-col ${isOnboarding ? '' : 'pb-24 md:pb-8 md:px-8 md:py-6'}`}>
           {children}
         </main>
 
-        {/* Bottom Navigation Dock - Hidden on Onboarding */}
+        {/* Bottom Navigation Dock - Hidden on desktop and onboarding */}
         {!isOnboarding && (
-          <nav className="absolute bottom-0 left-0 right-0 z-40 bg-[#111111]/95 backdrop-blur-lg border-t border-[#1F1C1A] px-6 py-4 flex items-center justify-between shadow-[0_-8px_24px_rgba(0,0,0,0.4)]">
+          <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#111111]/95 backdrop-blur-lg border-t border-[#1F1C1A] px-6 py-4 flex items-center justify-between shadow-[0_-8px_24px_rgba(0,0,0,0.4)] md:hidden">
             <Link href="/" className="flex flex-col items-center justify-center gap-1 group">
               <HomeIcon active={pathname === '/'} />
               <span className={`text-[10px] font-medium tracking-wider transition-colors duration-300 ${pathname === '/' ? 'text-[#D4A853]' : 'text-[#C9B99A]'}`}>

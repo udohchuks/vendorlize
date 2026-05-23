@@ -161,12 +161,12 @@ export default function CartPage() {
       </div>
 
       {cart.length > 0 ? (
-        <div className="flex-1 flex flex-col justify-between space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
           {/* Scrollable list of items */}
-          <div className="flex-1 overflow-y-auto max-h-[50vh] pr-1 no-scrollbar divide-y divide-[#1F1C1A]">
+          <div className="md:col-span-7 overflow-y-auto max-h-[50vh] md:max-h-[75vh] pr-1 no-scrollbar divide-y divide-[#1F1C1A]">
             {cart.map((item) => (
               <CartItemRow
-                key={`${item.itemId}-${item.size}`}
+                key={item.itemId + "-" + item.size}
                 item={item}
                 onShowToast={handleShowToast}
               />
@@ -174,10 +174,10 @@ export default function CartPage() {
           </div>
 
           {/* Checkout Totals Summary Card */}
-          <div className="bg-[#0A0A0A] border border-[#1F1C1A] rounded-2xl p-5 space-y-4">
+          <div className="md:col-span-5 bg-[#0A0A0A] border border-[#1F1C1A] rounded-2xl p-5 space-y-4 md:sticky md:top-24">
             <span className="text-[9px] font-extrabold tracking-wider text-[#C9B99A] uppercase">ORDER SUMMARY</span>
             
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2 text-xs text-left">
               <div className="flex justify-between items-center text-[#C9B99A]">
                 <span>Fitting Subtotal</span>
                 <span className="font-bold text-[#FAF0E6]">
@@ -196,7 +196,7 @@ export default function CartPage() {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-[#1F1C1A] flex justify-between items-center">
+            <div className="pt-3 border-t border-[#1F1C1A] flex justify-between items-center text-left">
               <span className="text-sm font-bold text-[#FAF0E6]">Grand Total</span>
               <span className="text-base font-black text-[#D4A853] tracking-wider">
                 {formatPrice(cartSubtotal, cartCurrency)}
@@ -216,9 +216,7 @@ export default function CartPage() {
             <button
               onClick={handleCheckout}
               disabled={isSubmitting}
-              className={`w-full py-4 bg-gradient-to-r from-[#D4A853] to-[#C9B99A] hover:from-[#C29642] hover:to-[#B5A586] text-[#0A0A0A] font-black text-xs rounded-xl tracking-wider uppercase shadow-[0_4px_16px_rgba(212,168,83,0.2)] hover:shadow-[0_4px_24px_rgba(212,168,83,0.35)] transition-all duration-300 flex items-center justify-center gap-2 ${
-                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
+              className={"w-full py-4 bg-gradient-to-r from-[#D4A853] to-[#C9B99A] hover:from-[#C29642] hover:to-[#B5A586] text-[#0A0A0A] font-black text-xs rounded-xl tracking-wider uppercase shadow-[0_4px_16px_rgba(212,168,83,0.2)] hover:shadow-[0_4px_24px_rgba(212,168,83,0.35)] transition-all duration-300 flex items-center justify-center gap-2 " + (isSubmitting ? "opacity-70 cursor-not-allowed" : "")}
             >
               {isSubmitting ? (
                 <>
