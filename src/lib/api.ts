@@ -196,7 +196,7 @@ export async function getCampaigns(merchantSlug: string, teamSlug?: string): Pro
  * Aggregates campaigns from configured merchants, filtered by our team slug.
  */
 export async function getAllCampaigns(): Promise<ApiResponse<Campaign[]>> {
-  const merchantsStr = process.env.NEXT_PUBLIC_MERCHANTS || 'rashida-tailors,amina-stitches,kofi-menswear';
+  const merchantsStr = process.env.NEXT_PUBLIC_MERCHANTS || 'phasion-sense,amina-stitches,kofi-menswear';
   const merchants = merchantsStr.split(',').map((s) => s.trim());
 
   try {
