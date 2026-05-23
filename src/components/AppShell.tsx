@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { getImageUrl } from '@/lib/api';
 
 // Gorgeous custom inline SVG icons to ensure absolute zero-dependency reliability
 const HomeIcon = ({ active }: { active: boolean }) => (
@@ -124,8 +125,8 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   const avatarUrl = userProfile
     ? userProfile.gender === 'male'
-      ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-      : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'
+      ? '/images/phasion-sense/ps3.jpg'
+      : '/images/phasion-sense/ps1.jpg'
     : null;
 
   return (
@@ -240,7 +241,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full overflow-hidden border border-[#D4A853]/45 flex-shrink-0">
                   <img
-                    src={avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'}
+                    src={avatarUrl ? getImageUrl(avatarUrl) : '/logo.jpg'}
                     alt={userProfile.name}
                     className="w-full h-full object-cover"
                   />
@@ -326,7 +327,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               {avatarUrl && (
                 <Link href="/studio" className="w-8 h-8 rounded-full overflow-hidden border border-[#1F1C1A] hover:border-[#D4A853]/60 transition-all duration-300 flex-shrink-0">
                   <img
-                    src={avatarUrl}
+                    src={getImageUrl(avatarUrl)}
                     alt={userProfile?.name || 'User Profile'}
                     className="w-full h-full object-cover"
                   />

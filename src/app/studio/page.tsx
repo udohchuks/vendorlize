@@ -38,16 +38,16 @@ const MEASUREMENT_DEFAULTS: Record<'male' | 'female', Record<string, { chest: nu
 
 const MODEL_AVATARS: Record<'male' | 'female', Record<string, string>> = {
   male: {
-    Slim: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80',
-    Average: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=80',
-    Athletic: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80',
-    'Plus Size': 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=600&auto=format&fit=crop&q=80',
+    Slim: '/images/phasion-sense/ps3.jpg',
+    Average: '/images/phasion-sense/ps4.jpg',
+    Athletic: '/images/phasion-sense/ps7.jpeg',
+    'Plus Size': '/images/phasion-sense/ps10.jpeg',
   },
   female: {
-    Slim: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80',
-    Average: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80',
-    Hourglass: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&auto=format&fit=crop&q=80',
-    'Plus Size': 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&auto=format&fit=crop&q=80',
+    Slim: '/images/phasion-sense/ps1.jpg',
+    Average: '/images/phasion-sense/ps2.jpg',
+    Hourglass: '/images/phasion-sense/ps5.jpg',
+    'Plus Size': '/images/phasion-sense/ps12.jpeg',
   },
 };
 
@@ -194,7 +194,7 @@ export default function StudioPage() {
     // If it's avatar mode, use their specific body-type model photo from MODEL_AVATARS.
     const gender = userProfile?.gender || 'male';
     const bodyType = userProfile?.bodyType || 'Average';
-    const avatarPhotoUrl = MODEL_AVATARS[gender]?.[bodyType] || MODEL_AVATARS[gender]?.['Average'];
+    const avatarPhotoUrl = getImageUrl(MODEL_AVATARS[gender]?.[bodyType] || MODEL_AVATARS[gender]?.['Average']);
 
     const personImageUrl = modelSource === 'upload' && uploadedImage
       ? uploadedImage
@@ -447,7 +447,7 @@ export default function StudioPage() {
                       /* AI Fitted Avatar photo mapping */
                       <div className="absolute inset-0 w-full h-full">
                         <img
-                          src={MODEL_AVATARS[userProfile.gender || 'male'][userProfile.bodyType || 'Average'] || MODEL_AVATARS['male']['Average']}
+                          src={getImageUrl(MODEL_AVATARS[userProfile.gender || 'male'][userProfile.bodyType || 'Average'] || MODEL_AVATARS['male']['Average'])}
                           alt="AI Fitted Avatar Model"
                           className="w-full h-full object-cover animate-fade-in"
                         />

@@ -16,19 +16,19 @@ import {
 const PRESET_BANNERS = [
   {
     name: 'Traditional Splendor',
-    url: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=1000&auto=format&fit=crop&q=80',
+    url: '/images/phasion-sense/ps11.jpeg',
   },
   {
     name: 'Ankara Elegance',
-    url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1000&auto=format&fit=crop&q=80',
+    url: '/images/phasion-sense/ps12.jpeg',
   },
   {
     name: 'Bespoke Suits',
-    url: 'https://images.unsplash.com/photo-1593032465175-481ac7f401a0?w=1000&auto=format&fit=crop&q=80',
+    url: '/images/phasion-sense/ps13.jpeg',
   },
   {
     name: 'Casual Vibe',
-    url: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=1000&auto=format&fit=crop&q=80',
+    url: '/images/phasion-sense/ps6.jpeg',
   },
 ];
 
@@ -230,7 +230,7 @@ export default function NewCampaignPage() {
                         isSelected ? 'border-[#D4A853] scale-[1.02] shadow-[0_0_12px_rgba(212,168,83,0.3)]' : 'border-[#1F1C1A] hover:border-[#C9B99A]/30'
                       }`}
                     >
-                      <img src={preset.url} alt={preset.name} className="w-full h-full object-cover" />
+                      <img src={getImageUrl(preset.url)} alt={preset.name} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40" />
                       <span className="absolute bottom-2 left-2 text-[9px] font-bold text-[#FAF0E6] drop-shadow-sm uppercase">
                         {preset.name}

@@ -10,6 +10,7 @@ import {
   getAllItems,
   getAllCampaigns,
   inferCategory,
+  getImageUrl,
 } from '@/lib/api';
 import { CategoryPills } from '@/components/CategoryPills';
 import { ProductCard } from '@/components/ProductCard';
@@ -233,9 +234,11 @@ export default function HomePage() {
               <div className="w-12 h-16 rounded-xl border border-[#1F1C1A] bg-[#0A0A0A] overflow-hidden flex-shrink-0 relative group">
                 <img
                   src={
-                    userProfile.gender === 'male'
-                      ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-                      : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'
+                    getImageUrl(
+                      userProfile.gender === 'male'
+                        ? '/images/phasion-sense/ps3.jpg'
+                        : '/images/phasion-sense/ps1.jpg'
+                    )
                   }
                   alt={userProfile.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

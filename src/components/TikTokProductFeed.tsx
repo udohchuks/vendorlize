@@ -78,7 +78,7 @@ export const TikTokProductFeed: React.FC<TikTokProductFeedProps> = ({
 
   const getMerchantLogo = (merchantId: string) => {
     const merchant = merchants.find((m) => m.id === merchantId);
-    return merchant?.logo_url ? getImageUrl(merchant.logo_url) : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80';
+    return merchant?.logo_url ? getImageUrl(merchant.logo_url) : '/logo.jpg';
   };
 
   return (
