@@ -1,0 +1,1 @@
+print("Kafui is too cool! ")
