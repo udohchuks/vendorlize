@@ -134,14 +134,23 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       {!isOnboarding && (
         <aside className="hidden md:flex md:w-[280px] md:flex-shrink-0 md:flex-col md:bg-[#111111] md:border-r md:border-[#1F1C1A] md:p-6 md:sticky md:top-0 md:h-screen md:justify-between z-45">
           <div className="space-y-8">
-            {/* Elegant Header */}
-            <Link href="/" className="flex flex-col group">
-              <span className="text-xl font-bold tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-[#FAF0E6] via-[#D4A853] to-[#C9B99A] group-hover:opacity-90 transition-opacity duration-300 uppercase">
-                Clothify
-              </span>
-              <span className="text-[9px] font-medium tracking-[0.3em] text-[#C9B99A] uppercase">
-                powered by phasion sense
-              </span>
+            {/* Elegant Header with Logo */}
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="w-11 h-11 rounded-full overflow-hidden border border-[#D4A853]/45 flex-shrink-0 bg-white p-0.5 shadow-md">
+                <img
+                  src="/logo.jpg"
+                  alt="Phasion Sense Logo"
+                  className="w-full h-full object-contain rounded-full"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base font-bold tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-[#FAF0E6] via-[#D4A853] to-[#C9B99A] group-hover:opacity-90 transition-opacity duration-300 uppercase leading-none">
+                  Clothify
+                </span>
+                <span className="text-[8px] font-bold tracking-[0.2em] text-[#C9B99A] uppercase mt-1 leading-none">
+                  PHASION SENSE
+                </span>
+              </div>
             </Link>
 
             {/* Navigation links stack */}
@@ -282,13 +291,22 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         {/* Elegant Top Header (Sticky) - Hidden on desktop and onboarding */}
         {!isOnboarding && (
           <header className="sticky top-0 z-40 bg-[#111111]/90 backdrop-blur-md border-b border-[#1F1C1A] px-6 py-4 flex items-center justify-between md:hidden">
-            <Link href="/" className="flex flex-col group">
-              <span className="text-xl font-bold tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-[#FAF0E6] via-[#D4A853] to-[#C9B99A] group-hover:opacity-90 transition-opacity duration-300 uppercase">
-                Clothify
-              </span>
-              <span className="text-[9px] font-medium tracking-[0.3em] text-[#C9B99A] uppercase">
-                powered by phasion sense
-              </span>
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-[#D4A853]/45 flex-shrink-0 bg-white p-0.5 shadow-md">
+                <img
+                  src="/logo.jpg"
+                  alt="Phasion Sense Logo"
+                  className="w-full h-full object-contain rounded-full"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-[#FAF0E6] via-[#D4A853] to-[#C9B99A] group-hover:opacity-90 transition-opacity duration-300 uppercase leading-none">
+                  Clothify
+                </span>
+                <span className="text-[7px] font-bold tracking-[0.2em] text-[#C9B99A] uppercase mt-0.5 leading-none">
+                  PHASION SENSE
+                </span>
+              </div>
             </Link>
             
             <div className="flex items-center gap-3">
