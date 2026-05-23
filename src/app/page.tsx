@@ -14,6 +14,7 @@ import {
 import { CategoryPills } from '@/components/CategoryPills';
 import { ProductCard } from '@/components/ProductCard';
 import { CampaignCard } from '@/components/CampaignCard';
+import { CampaignDetailSheet } from '@/components/CampaignDetailSheet';
 import { ProductDetailSheet } from '@/components/ProductDetailSheet';
 import { SkeletonGrid } from '@/components/SkeletonGrid';
 import { Toast } from '@/components/Toast';
@@ -36,6 +37,7 @@ export default function HomePage() {
   
   // Sheet & Toast States
   const [activeProduct, setActiveProduct] = useState<Item | null>(null);
+  const [activeCampaign, setActiveCampaign] = useState<Campaign | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
@@ -242,8 +244,30 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* Designer Campaigns & Active Collections Carousel */}
+            {campaigns.length > 0 && (
+              <div className="space-y-3.5 text-left">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-extrabold tracking-[0.25em] text-[#C9B99A] uppercase">Active Collections</span>
+                  <span className="text-[9px] text-[#D4A853] font-bold tracking-wider uppercase">Promotions</span>
+                </div>
+                
+                <div className="w-full overflow-x-auto no-scrollbar flex gap-4 pb-2 px-0.5">
+                  {campaigns.map((camp) => (
+                    <div key={camp.id} className="w-[300px] flex-shrink-0">
+                      <CampaignCard
+                        campaign={camp}
+                        merchantName={getMerchantName(camp.merchant_id || camp.team_slug || '')}
+                        onExplore={setActiveCampaign}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Personalized Product Grid */}
-            <div className="space-y-3">
+            <div className="space-y-3 text-left">
               <div className="flex justify-between items-center">
                 <span className="text-[10px] font-extrabold tracking-[0.25em] text-[#C9B99A] uppercase">PICKED FOR YOUR SILHOUETTE</span>
                 <span className="text-[10px] text-[#D4A853] font-bold tracking-wider uppercase">AI MATCH ACTIVE</span>
@@ -283,6 +307,16 @@ export default function HomePage() {
           merchantName={getMerchantName(activeProduct.merchant_id)}
           onClose={() => setActiveProduct(null)}
           onShowToast={handleShowToast}
+        />
+      )}
+
+      {/* Floating Collection detail Drawer Sheet */}
+      {activeCampaign && (
+        <CampaignDetailSheet
+          campaign={activeCampaign}
+          merchantName={getMerchantName(activeCampaign.merchant_id || activeCampaign.team_slug || '')}
+          onClose={() => setActiveCampaign(null)}
+          onProductTap={setActiveProduct}
         />
       )}
 

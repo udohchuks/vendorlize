@@ -214,6 +214,25 @@ export async function getAllCampaigns(): Promise<ApiResponse<Campaign[]>> {
   }
 }
 
+export interface CampaignDetail {
+  id: string;
+  merchant: {
+    id: string;
+    name: string;
+    whatsapp_number: string | null;
+  } | null;
+  title: string;
+  copy_text: string | null;
+  image_urls: string[] | null;
+  featured_items: Item[];
+  team_slug: string | null;
+  created_at: number;
+}
+
+export async function getCampaignById(campaignId: string): Promise<ApiResponse<CampaignDetail>> {
+  return safeFetch<CampaignDetail>(`${BASE_URL}/campaigns/${campaignId}`);
+}
+
 // ── BASKETS API ──
 
 export async function createBasket(basketData: BasketCreateRequest): Promise<ApiResponse<{ id: string }>> {
