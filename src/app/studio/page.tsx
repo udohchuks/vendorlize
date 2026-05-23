@@ -75,6 +75,7 @@ export default function StudioPage() {
   const [overlayScale, setOverlayScale] = useState<number>(0.95);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const dragStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleShowToast = (message: string, type: 'success' | 'error') => {
     setToastMessage(message);
@@ -437,11 +438,20 @@ export default function StudioPage() {
                         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                       />
                     ) : modelSource === 'upload' ? (
-                      <div className="flex flex-col items-center justify-center space-y-4 p-6 text-center text-[#C9B99A]/50">
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex flex-col items-center justify-center space-y-4 p-6 text-center text-[#C9B99A]/50 hover:text-[#FAF0E6]/80 cursor-pointer transition-colors w-full h-full"
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.2" stroke="currentColor" className="w-12 h-12">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 1.5V19.5A2.25 2.25 0 003.5 21.75h17m-18 0h18m-18 0V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0h18M9 10.5h.008v.008H9V10.5z" />
                         </svg>
                         <span className="text-[10px] font-bold uppercase tracking-wider">No portrait uploaded yet</span>
+                        <button
+                          type="button"
+                          className="px-4 py-2 border border-[#C9B99A]/30 text-[#FAF0E6] text-[9px] font-bold rounded-lg uppercase hover:border-[#D4A853] hover:text-[#D4A853] transition-colors"
+                        >
+                          Upload Photo
+                        </button>
                       </div>
                     ) : (
                       /* AI Fitted Avatar photo mapping */
@@ -543,9 +553,9 @@ export default function StudioPage() {
                       setUploadedImage(null);
                       setFitResult(null);
                     }}
-                    className="text-[9px] text-red-500 font-bold uppercase hover:underline"
+                    className="text-[9px] text-red-500 font-extrabold uppercase hover:underline"
                   >
-                    Remove Photo
+                    Remove & Upload Different Photo
                   </button>
                 )}
               </div>
@@ -624,6 +634,7 @@ export default function StudioPage() {
               {!uploadedImage ? (
                 <div className="p-6 border border-dashed border-[#1F1C1A] hover:border-[#D4A853]/40 rounded-2xl bg-[#111111]/30 transition-all flex flex-col items-center justify-center space-y-3 relative group cursor-pointer text-center">
                   <input
+                    ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
@@ -642,16 +653,27 @@ export default function StudioPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-[11px] text-[#C9B99A]/80 font-bold uppercase tracking-wider">Portrait loaded successfully</span>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-3 bg-[#111111] border border-[#1F1C1A] rounded-xl">
+                    <div className="w-12 h-16 rounded-lg overflow-hidden bg-[#181615] border border-[#1F1C1A] flex-shrink-0">
+                      <img src={uploadedImage} alt="Uploaded portrait" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[8px] font-extrabold text-[#25D366] uppercase tracking-widest block">PORTRAIT LOADED</span>
+                      <h4 className="text-xs font-bold text-[#FAF0E6]">Your Custom Photo</h4>
+                      <p className="text-[10px] text-[#C9B99A]/50">Ready for AI virtual try-on.</p>
+                    </div>
+                  </div>
+                  
                   <button
+                    type="button"
                     onClick={() => {
                       setUploadedImage(null);
                       setFitResult(null);
                     }}
-                    className="text-[10px] text-red-500 font-bold uppercase hover:underline"
+                    className="w-full py-3 bg-[#0A0A0A] border border-[#1F1C1A] hover:border-red-500/30 text-[#C9B99A] hover:text-red-500 font-bold text-xs rounded-xl uppercase transition-colors"
                   >
-                    Change Photo
+                    Upload Different Photo
                   </button>
                 </div>
               )}
