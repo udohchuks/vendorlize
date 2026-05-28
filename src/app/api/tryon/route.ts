@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Client } from '@gradio/client';
+import { Blob } from 'buffer';
 
 export async function POST(request: Request) {
   // CORS Headers
@@ -18,6 +19,16 @@ export async function POST(request: Request) {
         { status: 400, headers: corsHeaders }
       );
     }
+
+    // Hugging Face token is optional for public Spaces, but improves reliability/rate limits.
+    // Support a few common env var names.
+    const hfToken =
+      process.env.HF_TOKEN ||
+      process.env.HUGGINGFACE_TOKEN ||
+      process.env.HF_ACCESS_TOKEN ||
+      process.env.HUGGING_FACE_HUB_TOKEN ||
+      '';
+    const connectOpts = hfToken ? ({ token: hfToken } as const) : undefined;
 
     // Parse person image blob (handle data URIs or external URLs)
     let personBlob: Blob;
@@ -56,9 +67,7 @@ export async function POST(request: Request) {
     // Step 1: Attempt to connect to zhengchong/CatVTON (requested by user)
     try {
       console.log('Attempting connection to zhengchong/CatVTON...');
-      const client = await Client.connect('zhengchong/CatVTON', {
-        token: process.env.HF_TOKEN as any,
-      });
+      const client = await Client.connect('zhengchong/CatVTON', connectOpts as any);
       const result = await client.predict('/tryon', {
         person_image: personBlob,
         garment_image: garmentBlob,
@@ -71,9 +80,7 @@ export async function POST(request: Request) {
       console.warn('zhengchong/CatVTON is offline or failed. Falling back to yisol/IDM-VTON...', catVtonError);
 
       // Step 2: Fallback to running yisol/IDM-VTON space
-      const client = await Client.connect('yisol/IDM-VTON', {
-        token: process.env.HF_TOKEN as any,
-      });
+      const client = await Client.connect('yisol/IDM-VTON', connectOpts as any);
       const result = await client.predict('/tryon', {
         dict: {
           background: personBlob,
