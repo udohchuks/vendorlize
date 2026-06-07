@@ -160,7 +160,7 @@ export default function OnboardingPage() {
           )}
           
           <div className="flex flex-col items-center">
-            <span className="text-sm font-bold tracking-[0.2em] text-[#D4A853] uppercase">Clothify</span>
+            <span className="text-sm font-bold tracking-[0.2em] text-[#D4A853] uppercase">Phashion Sense</span>
             <span className="text-[8px] tracking-[0.1em] text-[#C9B99A]">ONBOARDING</span>
           </div>
 
@@ -172,7 +172,7 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <h1 className="text-2xl font-bold tracking-tight text-[#FAF0E6]">Welcome to Clothify</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-[#FAF0E6]">Welcome to Phashion Sense</h1>
                 <p className="text-sm text-[#C9B99A]">Let's setup your tailored fitting room profile in under a minute.</p>
               </div>
 

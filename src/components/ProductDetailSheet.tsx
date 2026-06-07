@@ -62,7 +62,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   };
 
   const handleDirectWhatsApp = () => {
-    const textMessage = `Hello! I would like to order the custom-tailored "${item.name}" (Size: ${selectedSize}, Price: ${formatPrice(item.price_minor, item.currency)}) from your Clothify showcase, powered by Phasion Sense. My measurements are:\n- Chest: ${userProfile?.measurements?.chest || '--'}"\n- Waist: ${userProfile?.measurements?.waist || '--'}"\n- Hips: ${userProfile?.measurements?.hips || '--'}"\n- Height: ${userProfile?.measurements?.height || '--'}"\n- Inseam: ${userProfile?.measurements?.inseam || '--'}"\n\nPlease let me know the availability and payment details. Thank you!`;
+    const textMessage = `Hello! I would like to order the custom-tailored "${item.name}" (Size: ${selectedSize}, Price: ${formatPrice(item.price_minor, item.currency)}) from your Phashion Sense showcase. My measurements are:\n- Chest: ${userProfile?.measurements?.chest || '--'}"\n- Waist: ${userProfile?.measurements?.waist || '--'}\n- Hips: ${userProfile?.measurements?.hips || '--'}"\n- Height: ${userProfile?.measurements?.height || '--'}"\n- Inseam: ${userProfile?.measurements?.inseam || '--'}"\n\nPlease let me know the availability and payment details. Thank you!`;
     
     const waLink = buildWhatsAppLink(whatsappNum, textMessage);
     window.open(waLink, '_blank');
@@ -147,9 +147,9 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                 </svg>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] font-extrabold tracking-wider text-[#D4A853] uppercase">AI FIT FINDER RECOMENDATION</span>
+                <span className="text-[10px] font-extrabold tracking-wider text-[#D4A853] uppercase">AI FIT FINDER RECOMMENDATION</span>
                 <p className="text-xs font-semibold text-[#FAF0E6] leading-relaxed">
-                  Clothify suggests size <span className="text-[#D4A853] font-black underline">{getRecommendedSize(userProfile.measurements.chest)}</span> based on your <span className="text-[#C9B99A] capitalize">{userProfile.bodyType}</span> silhouette ({userProfile.measurements.chest}" Chest).
+                  Phashion Sense suggests size <span className="text-[#D4A853] font-black underline">{getRecommendedSize(userProfile.measurements.chest)}</span> based on your <span className="text-[#C9B99A] capitalize">{userProfile.bodyType}</span> silhouette ({userProfile.measurements.chest}" Chest).
                 </p>
               </div>
             </div>

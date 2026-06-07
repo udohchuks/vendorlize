@@ -45,7 +45,7 @@ export default function HomePage() {
   // On mount: Check onboarding redirection
   useEffect(() => {
     // Check local storage directly if context has not loaded yet
-    const storedProfile = localStorage.getItem('clothify_profile');
+    const storedProfile = localStorage.getItem('phashionsense_profile');
     if (!storedProfile && !userProfile) {
       router.push('/onboarding');
     }
@@ -221,7 +221,7 @@ export default function HomePage() {
             <div className="p-5 rounded-2xl bg-gradient-to-b from-[#181615] to-[#111111] border border-[#1F1C1A] flex items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-extrabold tracking-wider text-[#D4A853] uppercase">CLOTHIFY STUDIO MATCH</span>
+                  <span className="text-[10px] font-extrabold tracking-wider text-[#D4A853] uppercase">PHASHION STUDIO MATCH</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-ping" />
                 </div>
                 <h3 className="text-sm font-bold text-[#FAF0E6] capitalize">Tailored for {userProfile.name}</h3>

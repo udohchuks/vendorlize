@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   };
 
   try {
-    const { personImageUrl, garmentImageUrl } = await request.json();
+    const { personImageUrl, garmentImageUrl, clothType } = await request.json();
 
     if (!personImageUrl || !garmentImageUrl) {
       return NextResponse.json(
@@ -22,82 +22,128 @@ export async function POST(request: Request) {
 
     // Hugging Face token is optional for public Spaces, but improves reliability/rate limits.
     // Support a few common env var names.
-    const hfToken =
+    const hfToken: string =
       process.env.HF_TOKEN ||
       process.env.HUGGINGFACE_TOKEN ||
       process.env.HF_ACCESS_TOKEN ||
       process.env.HUGGING_FACE_HUB_TOKEN ||
       '';
-    const connectOpts = hfToken ? ({ token: hfToken } as const) : undefined;
+    type ConnectOptions = Parameters<typeof Client.connect>[1];
+    const connectOpts: ConnectOptions = hfToken ? { token: hfToken as `hf_${string}` } : undefined;
 
-    // Parse person image blob (handle data URIs or external URLs)
-    let personBlob: Blob;
-    if (personImageUrl.startsWith('data:')) {
-      const match = personImageUrl.match(/^data:(.*?);base64,(.*)$/);
-      if (!match) {
-        throw new Error('Invalid personImageUrl Data URL format');
+    const loadBlob = async (u: string, label: string): Promise<Blob> => {
+      if (typeof u !== 'string' || u.length === 0) {
+        throw new Error(`Missing ${label} URL`);
       }
-      const mimeType = match[1];
-      const base64Data = match[2];
-      const buffer = Buffer.from(base64Data, 'base64');
-      personBlob = new Blob([buffer], { type: mimeType });
-    } else {
-      const personResponse = await fetch(personImageUrl);
-      personBlob = await personResponse.blob();
-    }
 
-    // Parse garment image blob (handle data URIs or external URLs)
-    let garmentBlob: Blob;
-    if (garmentImageUrl.startsWith('data:')) {
-      const match = garmentImageUrl.match(/^data:(.*?);base64,(.*)$/);
-      if (!match) {
-        throw new Error('Invalid garmentImageUrl Data URL format');
+      // Data URL (base64)
+      if (u.startsWith('data:')) {
+        const match = u.match(/^data:(.*?);base64,(.*)$/);
+        if (!match) throw new Error(`Invalid ${label} data URL format`);
+        const mimeType = match[1];
+        const base64Data = match[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        return new Blob([buffer], { type: mimeType });
       }
-      const mimeType = match[1];
-      const base64Data = match[2];
-      const buffer = Buffer.from(base64Data, 'base64');
-      garmentBlob = new Blob([buffer], { type: mimeType });
-    } else {
-      const garmentResponse = await fetch(garmentImageUrl);
-      garmentBlob = await garmentResponse.blob();
-    }
+
+      // Remote or local absolute URL (e.g. http://127.0.0.1:3000/images/...)
+      const resp = await fetch(u);
+      if (!resp.ok) {
+        throw new Error(`Failed to fetch ${label} (${resp.status})`);
+      }
+      const arrayBuffer = await resp.arrayBuffer();
+      const contentType = resp.headers.get('content-type') || 'application/octet-stream';
+      return new Blob([arrayBuffer], { type: contentType });
+    };
+
+    const personBlob = await loadBlob(personImageUrl, 'personImageUrl');
+    const garmentBlob = await loadBlob(garmentImageUrl, 'garmentImageUrl');
+    // Many Spaces infer output format from filenames. Use .png to avoid JPEG alpha issues.
+    const personFile = new File([await personBlob.arrayBuffer()], 'person.png', {
+      type: 'image/png',
+    });
+    const garmentFile = new File([await garmentBlob.arrayBuffer()], 'garment.png', {
+      type: 'image/png',
+    });
 
     let outputUrl = '';
+
+    const extractFirstUrl = (resultData: unknown): string => {
+      // Gradio JS client usually returns an array of outputs (one per component),
+      // but some Spaces may return a single object directly.
+      const tryExtract = (value: unknown): string => {
+        if (!value || typeof value !== 'object') return '';
+        const rec = value as Record<string, unknown>;
+        const url = rec.url;
+        const path = rec.path;
+        if (typeof url === 'string') return url;
+        if (typeof path === 'string') return path;
+        return '';
+      };
+
+      if (Array.isArray(resultData)) {
+        if (resultData.length === 0) return '';
+        return tryExtract(resultData[0]);
+      }
+
+      return tryExtract(resultData);
+    };
 
     // Step 1: Attempt to connect to zhengchong/CatVTON (requested by user)
     try {
       console.log('Attempting connection to zhengchong/CatVTON...');
-      const client = await Client.connect('zhengchong/CatVTON', connectOpts as any);
-      const result = await client.predict('/tryon', {
-        person_image: personBlob,
-        garment_image: garmentBlob,
-      }) as any;
-
-      if (result.data && result.data[0]) {
-        outputUrl = result.data[0].url || result.data[0].path || '';
-      }
-    } catch (catVtonError) {
-      console.warn('zhengchong/CatVTON is offline or failed. Falling back to yisol/IDM-VTON...', catVtonError);
-
-      // Step 2: Fallback to running yisol/IDM-VTON space
-      const client = await Client.connect('yisol/IDM-VTON', connectOpts as any);
-      const result = await client.predict('/tryon', {
-        dict: {
-          background: personBlob,
+      const client = await Client.connect('zhengchong/CatVTON', connectOpts);
+      // CatVTON exposes /submit_function, not /tryon.
+      // See: client.view_api().named_endpoints keys.
+      const normalizedClothType =
+        clothType === 'lower' || clothType === 'overall' ? clothType : 'upper';
+      const result = await client.predict('/submit_function', {
+        person_image: {
+          background: personFile,
           layers: [],
           composite: null,
         },
-        garm_img: garmentBlob,
+        cloth_image: garmentFile,
+        cloth_type: normalizedClothType,
+        num_inference_steps: 30,
+        guidance_scale: 2.5,
+        seed: 42,
+        show_type: 'result only',
+      });
+
+      outputUrl = extractFirstUrl(result.data);
+    } catch (catVtonError) {
+      const catMsg =
+        catVtonError instanceof Error
+          ? catVtonError.message
+          : typeof catVtonError === 'string'
+            ? catVtonError
+            : (() => {
+                try {
+                  return JSON.stringify(catVtonError);
+                } catch {
+                  return String(catVtonError);
+                }
+              })();
+      console.warn(`zhengchong/CatVTON failed (${catMsg}). Falling back to yisol/IDM-VTON...`);
+
+      // Step 2: Fallback to running yisol/IDM-VTON space
+      const client = await Client.connect('yisol/IDM-VTON', connectOpts);
+      const result = await client.predict('/tryon', {
+        dict: {
+          background: personFile,
+          layers: [],
+          composite: null,
+        },
+        garm_img: garmentFile,
         garment_des: 'clothing item',
         is_checked: true,
         is_checked_crop: false,
         denoise_steps: 30,
         seed: 42,
-      }) as any;
+      });
 
-      if (result.data && result.data[0]) {
-        outputUrl = result.data[0].url || result.data[0].path || '';
-      }
+      outputUrl = extractFirstUrl(result.data);
     }
 
     if (!outputUrl) {
@@ -105,10 +151,23 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ output: outputUrl }, { status: 200, headers: corsHeaders });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Try-on API Route Error:', err);
     return NextResponse.json(
-      { error: err.message || 'An unexpected error occurred during the virtual try-on.' },
+      {
+        error:
+          err instanceof Error
+            ? err.message
+            : typeof err === 'string'
+              ? err
+              : (() => {
+                  try {
+                    return JSON.stringify(err);
+                  } catch {
+                    return 'An unexpected error occurred during the virtual try-on.';
+                  }
+                })(),
+      },
       { status: 500, headers: corsHeaders }
     );
   }

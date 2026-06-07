@@ -1,4 +1,4 @@
-// Centralized API layer for Clothify (powered by Phasion Sense)
+// Centralized API layer for Phashion Sense
 // Base URL: https://api-hackathon.codedematrixtech.com
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api-hackathon.codedematrixtech.com';
@@ -136,10 +136,10 @@ export async function getItems(merchantSlug: string): Promise<ApiResponse<Item[]
 
 /**
  * Aggregates all items from standard merchants configured in env.
- * Defaults to: rashida-tailors, amina-stitches, kofi-menswear
+ * Defaults to: phasion-sense
  */
 export async function getAllItems(): Promise<ApiResponse<Item[]>> {
-  const merchantsStr = process.env.NEXT_PUBLIC_MERCHANTS || 'phasion-sense,amina-stitches,kofi-menswear';
+  const merchantsStr = process.env.NEXT_PUBLIC_MERCHANTS || 'phasion-sense';
   const merchants = merchantsStr.split(',').map((s) => s.trim());
 
   try {
@@ -196,7 +196,7 @@ export async function getCampaigns(merchantSlug: string, teamSlug?: string): Pro
  * Aggregates campaigns from configured merchants, filtered by our team slug.
  */
 export async function getAllCampaigns(): Promise<ApiResponse<Campaign[]>> {
-  const merchantsStr = process.env.NEXT_PUBLIC_MERCHANTS || 'phasion-sense,amina-stitches,kofi-menswear';
+  const merchantsStr = process.env.NEXT_PUBLIC_MERCHANTS || 'phasion-sense';
   const merchants = merchantsStr.split(',').map((s) => s.trim());
 
   try {
@@ -347,14 +347,25 @@ export function formatPrice(priceMinor: number, currency: string = 'GHS'): strin
 }
 
 /**
- * Returns fully qualified image URL by prepending BASE_URL to relative paths
+ * Returns fully qualified image URL by prepending BASE_URL to relative paths.
+ * Also fixes known backend extension mismatches (ps12.jpeg -> ps12.jpg, ps15.jpeg -> ps15.jpg).
  */
 export function getImageUrl(path: string | null | undefined): string {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
     return path;
   }
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  let cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+  // Fix known backend extension mismatches where the DB has .jpeg but the file is .jpg
+  const extensionFixes: Record<string, string> = {
+    '/images/phasion-sense/ps12.jpeg': '/images/phasion-sense/ps12.jpg',
+    '/images/phasion-sense/ps15.jpeg': '/images/phasion-sense/ps15.jpg',
+  };
+  if (extensionFixes[cleanPath]) {
+    cleanPath = extensionFixes[cleanPath];
+  }
+
   return `${BASE_URL}${cleanPath}`;
 }
 

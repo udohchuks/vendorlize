@@ -62,7 +62,7 @@ export const TikTokProductFeed: React.FC<TikTokProductFeedProps> = ({
   const handleShare = (e: React.MouseEvent, item: Item) => {
     e.stopPropagation();
     const merchantName = getMerchantName(item.merchant_id);
-    const text = `Hey! Look at this gorgeous custom "${item.name}" by designer "${merchantName}" I found on Clothify! It fits bespoke to my silhouette. ${window.location.origin}`;
+    const text = `Hey! Look at this gorgeous custom "${item.name}" by designer "${merchantName}" I found on Phashion Sense! It fits bespoke to my silhouette. ${window.location.origin}`;
     
     // Find merchant whatsapp to fallback or default
     const merchantInfo = merchants.find((m) => m.id === item.merchant_id);

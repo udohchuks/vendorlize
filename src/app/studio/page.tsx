@@ -195,17 +195,21 @@ export default function StudioPage() {
     // If it's avatar mode, use their specific body-type model photo from MODEL_AVATARS.
     const gender = userProfile?.gender || 'male';
     const bodyType = userProfile?.bodyType || 'Average';
-    const avatarPhotoUrl = getImageUrl(MODEL_AVATARS[gender]?.[bodyType] || MODEL_AVATARS[gender]?.['Average']);
+    const avatarPhotoPath = MODEL_AVATARS[gender]?.[bodyType] || MODEL_AVATARS[gender]?.['Average'];
+    const avatarPhotoUrl = avatarPhotoPath
+      ? new URL(avatarPhotoPath, window.location.origin).toString()
+      : new URL('/logo.jpg', window.location.origin).toString();
 
     const personImageUrl = modelSource === 'upload' && uploadedImage
       ? uploadedImage
       : avatarPhotoUrl;
 
     try {
+      const clothType = viewMode === 'full' ? 'overall' : 'upper';
       const res = await fetch('/api/tryon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personImageUrl, garmentImageUrl }),
+        body: JSON.stringify({ personImageUrl, garmentImageUrl, clothType }),
       });
 
       if (!res.ok) {
@@ -214,7 +218,7 @@ export default function StudioPage() {
 
       const data = await res.json();
       if (data.error) {
-        throw new Error(data.error);
+        throw new Error(String(data.error));
       }
 
       if (data.output) {
@@ -225,7 +229,12 @@ export default function StudioPage() {
       }
     } catch (err: any) {
       console.warn('AI Try-on failed. Falling back to local overlay mode...', err);
-      handleShowToast('AI Server busy. Initialized local interactive draping overlay!', 'success');
+      const msg = typeof err?.message === 'string' ? err.message : String(err);
+      if (msg.toLowerCase().includes('zerogpu quota exceeded') || msg.toLowerCase().includes('authenticate with a hugging face token')) {
+        handleShowToast('AI Try-on needs a Hugging Face token (HF_TOKEN). Falling back to overlay mode.', 'error');
+      } else {
+        handleShowToast('AI Server busy. Initialized local interactive draping overlay!', 'success');
+      }
       
       // Fallback: Use local overlay mode
       setFitResult(garmentImageUrl);
@@ -250,7 +259,7 @@ export default function StudioPage() {
     const whatsappNum = merchant?.whatsapp_number || '233599835025';
 
     let text = "Hello " + (merchant ? merchant.name : "Designer") + "!\n\n";
-    text += "I simulated a custom fit for your garment *\"" + activeGarment.name + "\"* on Clothify (powered by Phasion Sense) and would like to place an order/inquiry.\n\n";
+    text += "I simulated a custom fit for your garment *\"" + activeGarment.name + "\"* on Phashion Sense and would like to place an order/inquiry.\n\n";
 
     if (userProfile) {
       text += "*My Tailoring Blueprint (AI-Fitted)*:\n";
@@ -288,7 +297,7 @@ export default function StudioPage() {
         <div className="space-y-2 max-w-[300px] mx-auto">
           <h2 className="text-lg font-bold text-[#FAF0E6] uppercase">AI Silhouette Profile Required</h2>
           <p className="text-xs text-[#C9B99A]/85 leading-relaxed font-semibold">
-            To unlock the Clothify virtual try-on studio, we require a digital outline of your physical coordinates. Setup your profile now.
+            To unlock the virtual try-on studio, we require a digital outline of your physical coordinates. Setup your profile now.
           </p>
         </div>
 
@@ -338,7 +347,7 @@ export default function StudioPage() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <span className="text-[10px] font-extrabold tracking-[0.25em] text-[#C9B99A] uppercase">Tailoring Simulation</span>
-          <h1 className="text-xl font-bold tracking-tight text-[#FAF0E6] uppercase">Clothify Studio</h1>
+          <h1 className="text-xl font-bold tracking-tight text-[#FAF0E6] uppercase">Phashion Studio</h1>
         </div>
 
         {/* View Toggle */}

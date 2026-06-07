@@ -83,7 +83,7 @@ export default function CartPage() {
         const basketId = response.data.id;
 
         // Build detailed custom order summary text for WhatsApp
-        let textMessage = `Hello ${merchantName}! I am placing a new custom-tailored order via Clothify (powered by Phasion Sense).\n\n`;
+        let textMessage = `Hello ${merchantName}! I am placing a new custom-tailored order via Phashion Sense.\n\n`;
         textMessage += `Basket ID: *${basketId}*\n`;
         textMessage += `Customer Name: *${userProfile?.name || 'Customer'}*\n\n`;
         textMessage += `*Items Ordered*:\n`;

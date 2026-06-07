@@ -140,16 +140,16 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               <div className="w-11 h-11 rounded-full overflow-hidden border border-[#D4A853]/45 flex-shrink-0 bg-white p-0.5 shadow-md">
                 <img
                   src="/logo.jpg"
-                  alt="Phasion Sense Logo"
+                  alt="Phashion Sense Logo"
                   className="w-full h-full object-contain rounded-full"
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-bold tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-[#FAF0E6] via-[#D4A853] to-[#C9B99A] group-hover:opacity-90 transition-opacity duration-300 uppercase leading-none">
-                  Clothify
+                <span className="text-sm font-bold tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-[#FAF0E6] via-[#D4A853] to-[#C9B99A] group-hover:opacity-90 transition-opacity duration-300 uppercase leading-none">
+                  PHASHION SENSE
                 </span>
-                <span className="text-[8px] font-bold tracking-[0.2em] text-[#C9B99A] uppercase mt-1 leading-none">
-                  PHASION SENSE
+                <span className="text-[7px] font-bold tracking-[0.2em] text-[#C9B99A] uppercase mt-1 leading-none">
+                  BESPOKE STUDIO
                 </span>
               </div>
             </Link>
@@ -222,15 +222,31 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               </Link>
 
               <Link
-                href="/campaigns/new"
+                href="/about"
                 className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
-                  pathname === '/campaigns/new'
+                  pathname === '/about'
                     ? 'bg-[#D4A853]/10 text-[#D4A853] border border-[#D4A853]/20 shadow-[0_0_12px_rgba(212,168,83,0.06)]'
                     : 'text-[#C9B99A] hover:bg-white/5 hover:text-[#FAF0E6] border border-transparent'
                 }`}
               >
-                <CampaignIcon active={pathname === '/campaigns/new'} />
-                <span>New Campaign</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className={`w-6 h-6 ${pathname === '/about' ? 'text-[#D4A853]' : 'text-[#C9B99A]'}`}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                </svg>
+                <span>About</span>
+              </Link>
+
+              <Link
+                href="/admin"
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
+                  pathname === '/admin'
+                    ? 'bg-[#D4A853]/10 text-[#D4A853] border border-[#D4A853]/20 shadow-[0_0_12px_rgba(212,168,83,0.06)]'
+                    : 'text-[#C9B99A] hover:bg-white/5 hover:text-[#FAF0E6] border border-transparent'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className={`w-6 h-6 ${pathname === '/admin' ? 'text-[#D4A853]' : 'text-[#C9B99A]'}`}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                </svg>
+                <span>Admin Panel</span>
               </Link>
             </nav>
           </div>
@@ -296,16 +312,16 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               <div className="w-8 h-8 rounded-full overflow-hidden border border-[#D4A853]/45 flex-shrink-0 bg-white p-0.5 shadow-md">
                 <img
                   src="/logo.jpg"
-                  alt="Phasion Sense Logo"
+                  alt="Phashion Sense Logo"
                   className="w-full h-full object-contain rounded-full"
                 />
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-bold tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-[#FAF0E6] via-[#D4A853] to-[#C9B99A] group-hover:opacity-90 transition-opacity duration-300 uppercase leading-none">
-                  Clothify
+                  PHASHION SENSE
                 </span>
                 <span className="text-[7px] font-bold tracking-[0.2em] text-[#C9B99A] uppercase mt-0.5 leading-none">
-                  PHASION SENSE
+                  BESPOKE STUDIO
                 </span>
               </div>
             </Link>

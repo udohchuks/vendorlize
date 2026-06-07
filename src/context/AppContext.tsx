@@ -62,9 +62,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Load from localStorage on mount
   useEffect(() => {
     try {
-      const storedCart = localStorage.getItem('clothify_cart');
-      const storedWishlist = localStorage.getItem('clothify_wishlist');
-      const storedProfile = localStorage.getItem('clothify_profile');
+      const storedCart = localStorage.getItem('phashionsense_cart');
+      const storedWishlist = localStorage.getItem('phashionsense_wishlist');
+      const storedProfile = localStorage.getItem('phashionsense_profile');
 
       if (storedCart) setCart(JSON.parse(storedCart));
       if (storedWishlist) setWishlist(JSON.parse(storedWishlist));
@@ -90,7 +90,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     if (!isInitialized) return;
     try {
-      localStorage.setItem('clothify_cart', JSON.stringify(cart));
+      localStorage.setItem('phashionsense_cart', JSON.stringify(cart));
     } catch (e) {
       console.error('Failed to save cart to localStorage', e);
     }
@@ -99,7 +99,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     if (!isInitialized) return;
     try {
-      localStorage.setItem('clothify_wishlist', JSON.stringify(wishlist));
+      localStorage.setItem('phashionsense_wishlist', JSON.stringify(wishlist));
     } catch (e) {
       console.error('Failed to save wishlist to localStorage', e);
     }
@@ -109,9 +109,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!isInitialized) return;
     try {
       if (userProfile) {
-        localStorage.setItem('clothify_profile', JSON.stringify(userProfile));
+        localStorage.setItem('phashionsense_profile', JSON.stringify(userProfile));
       } else {
-        localStorage.removeItem('clothify_profile');
+        localStorage.removeItem('phashionsense_profile');
       }
     } catch (e) {
       console.error('Failed to save profile to localStorage', e);

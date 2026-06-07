@@ -4,8 +4,8 @@ import { AppContextProvider } from '@/context/AppContext';
 import { AppShell } from '@/components/AppShell';
 
 export const metadata: Metadata = {
-  title: 'Clothify — Custom Tailoring & Fitting Studio',
-  description: 'Your personalized fitting room and fashion assistant. Browse exquisite bespoke wear from elite merchants. Powered by Phasion Sense.',
+  title: 'Phashion Sense — Custom Tailoring & Fitting Studio',
+  description: 'Your personalized fitting room and fashion assistant. Browse exquisite bespoke wear from elite merchants.',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
   themeColor: '#0A0A0A',
 };
