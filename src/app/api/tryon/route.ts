@@ -59,9 +59,18 @@ export async function POST(request: Request) {
       const client = await Client.connect('zhengchong/CatVTON', {
         token: process.env.HF_TOKEN as any,
       });
-      const result = await client.predict('/tryon', {
-        person_image: personBlob,
-        garment_image: garmentBlob,
+      const result = await client.predict('/submit_function', {
+        person_image: {
+          background: personBlob,
+          layers: [],
+          composite: null,
+        },
+        cloth_image: garmentBlob,
+        cloth_type: 'overall',
+        num_inference_steps: 50,
+        guidance_scale: 2.5,
+        seed: 42,
+        show_type: 'result only',
       }) as any;
 
       if (result.data && result.data[0]) {
