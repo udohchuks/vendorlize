@@ -425,7 +425,7 @@ export default function StudioPage() {
                   <img
                     src={fitResult}
                     alt="AI Tailored Fit Result"
-                    className="absolute inset-0 w-full h-full object-cover animate-fade-in"
+                    className="absolute inset-0 w-full h-full object-contain animate-fade-in"
                   />
                 ) : (
                   /* STANDBY OR FALLBACK OVERLAY VIEW */
@@ -435,7 +435,7 @@ export default function StudioPage() {
                       <img
                         src={uploadedImage}
                         alt="Custom User Portrait"
-                        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                        className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                       />
                     ) : modelSource === 'upload' ? (
                       <div
@@ -459,7 +459,7 @@ export default function StudioPage() {
                         <img
                           src={getImageUrl(MODEL_AVATARS[userProfile.gender || 'male'][userProfile.bodyType || 'Average'] || MODEL_AVATARS['male']['Average'])}
                           alt="AI Fitted Avatar Model"
-                          className="w-full h-full object-cover animate-fade-in"
+                          className="w-full h-full object-contain animate-fade-in"
                         />
                         
                         {/* Wireframe Outline visualizer overlay */}
@@ -490,12 +490,12 @@ export default function StudioPage() {
                           cursor: isDragging ? 'grabbing' : 'grab',
                           touchAction: 'none',
                         }}
-                        className="w-full max-w-[210px] aspect-[3/4] rounded-2xl overflow-hidden border border-[#D4A853]/60 shadow-[0_0_32px_rgba(212,168,83,0.3)] bg-transparent absolute z-20 select-none animate-fade-in"
+                        className="w-full max-w-[210px] rounded-2xl overflow-hidden border border-[#D4A853]/60 shadow-[0_0_32px_rgba(212,168,83,0.3)] bg-transparent absolute z-20 select-none animate-fade-in"
                       >
                         <img
                           src={fitResult}
                           alt="Fallback Draping Garment"
-                          className="w-full h-full object-cover pointer-events-none select-none"
+                          className="w-full h-full object-contain pointer-events-none select-none"
                         />
                         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#D4A853] animate-ping" />
                       </div>
