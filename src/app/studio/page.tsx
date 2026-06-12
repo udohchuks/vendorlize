@@ -224,13 +224,8 @@ export default function StudioPage() {
         throw new Error('No output image URL returned from AI.');
       }
     } catch (err: any) {
-      console.warn('AI Try-on failed. Falling back to local overlay mode...', err);
-      handleShowToast('AI Server busy. Initialized local interactive draping overlay!', 'success');
-      
-      // Fallback: Use local overlay mode
-      setFitResult(garmentImageUrl);
-      setOverlayPos({ x: 0, y: 0 });
-      setOverlayScale(0.95);
+      console.error('AI Try-on failed:', err);
+      handleShowToast(err.message || 'AI Try-on failed. Please try again.', 'error');
     } finally {
       setIsFitting(false);
     }

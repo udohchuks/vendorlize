@@ -52,54 +52,48 @@ export async function POST(request: Request) {
     }
 
     let outputUrl = '';
+    const maxRetries = 3;
+    let attempt = 0;
+    let lastError: any = null;
 
-    // Step 1: Attempt to connect to zhengchong/CatVTON (requested by user)
-    try {
-      console.log('Attempting connection to zhengchong/CatVTON...');
-      const client = await Client.connect('zhengchong/CatVTON', {
-        token: process.env.HF_TOKEN as any,
-      });
-      const result = await client.predict('/submit_function', {
-        person_image: {
-          background: personBlob,
-          layers: [],
-          composite: null,
-        },
-        cloth_image: garmentBlob,
-        cloth_type: 'overall',
-        num_inference_steps: 50,
-        guidance_scale: 2.5,
-        seed: 42,
-        show_type: 'result only',
-      }) as any;
+    while (attempt < maxRetries && !outputUrl) {
+      attempt++;
+      try {
+        console.log(`Connection attempt ${attempt} to zhengchong/CatVTON...`);
+        const client = await Client.connect('zhengchong/CatVTON', {
+          token: process.env.HF_TOKEN as any,
+        });
+        const result = await client.predict('/submit_function', {
+          person_image: {
+            background: personBlob,
+            layers: [],
+            composite: null,
+          },
+          cloth_image: garmentBlob,
+          cloth_type: 'overall',
+          num_inference_steps: 50,
+          guidance_scale: 2.5,
+          seed: 42,
+          show_type: 'result only',
+        }) as any;
 
-      if (result.data && result.data[0]) {
-        outputUrl = result.data[0].url || result.data[0].path || '';
+        if (result.data && result.data[0]) {
+          outputUrl = result.data[0].url || result.data[0].path || '';
+        }
+      } catch (err: any) {
+        console.warn(`Attempt ${attempt} failed:`, err.message || err);
+        lastError = err;
+        // Brief wait before retrying (exponential backoff representation)
+        if (attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
       }
-    } catch (catVtonError) {
-      console.warn('zhengchong/CatVTON is offline or failed. Falling back to yisol/IDM-VTON...', catVtonError);
+    }
 
-      // Step 2: Fallback to running yisol/IDM-VTON space
-      const client = await Client.connect('yisol/IDM-VTON', {
-        token: process.env.HF_TOKEN as any,
-      });
-      const result = await client.predict('/tryon', {
-        dict: {
-          background: personBlob,
-          layers: [],
-          composite: null,
-        },
-        garm_img: garmentBlob,
-        garment_des: 'clothing item',
-        is_checked: true,
-        is_checked_crop: false,
-        denoise_steps: 30,
-        seed: 42,
-      }) as any;
-
-      if (result.data && result.data[0]) {
-        outputUrl = result.data[0].url || result.data[0].path || '';
-      }
+    if (!outputUrl) {
+      throw new Error(
+        lastError?.message || 'Failed to retrieve try-on output URL from Hugging Face Gradio client after multiple attempts.'
+      );
     }
 
     if (!outputUrl) {
