@@ -132,8 +132,8 @@ export function isItemValid(item: any): boolean {
   const brokenIds = ['ps-12', 'ps-15'];
   if (brokenIds.includes(item.id)) return false;
 
-  // amina-stitches and kofi-menswear items are all broken (404 images)
-  if (item.id.startsWith('as-') || item.id.startsWith('km-')) return false;
+  // amina-stitches (as-), kofi-menswear (km-), and rashida-tailors (rt-) items are all broken (404 images)
+  if (item.id.startsWith('as-') || item.id.startsWith('km-') || item.id.startsWith('rt-')) return false;
 
   // Check image urls if present
   if (item.image_urls !== undefined) {

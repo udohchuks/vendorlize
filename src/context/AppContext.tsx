@@ -68,7 +68,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       const brokenIds = ['ps-12', 'ps-15'];
       const isIdBroken = (id: string) => {
-        return id.startsWith('as-') || id.startsWith('km-') || brokenIds.includes(id);
+        return id.startsWith('as-') || id.startsWith('km-') || id.startsWith('rt-') || brokenIds.includes(id);
       };
 
       if (storedCart) {
