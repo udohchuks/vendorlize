@@ -122,10 +122,34 @@ export async function getMerchantDetail(slug: string): Promise<ApiResponse<Merch
 
 // ── ITEMS API ──
 
+/**
+ * Helper to check if an item has working images or is known to be broken.
+ */
+export function isItemValid(item: any): boolean {
+  if (!item || !item.id) return false;
+  
+  // Known broken IDs
+  const brokenIds = ['ps-12', 'ps-15'];
+  if (brokenIds.includes(item.id)) return false;
+
+  // amina-stitches and kofi-menswear items are all broken (404 images)
+  if (item.id.startsWith('as-') || item.id.startsWith('km-')) return false;
+
+  // Check image urls if present
+  if (item.image_urls !== undefined) {
+    if (!item.image_urls || item.image_urls.length === 0) return false;
+  } else if (item.image_url !== undefined) {
+    if (!item.image_url) return false;
+  }
+
+  return true;
+}
+
 export async function getItems(merchantSlug: string): Promise<ApiResponse<Item[]>> {
   const res = await safeFetch<Item[]>(`${BASE_URL}/merchants/${merchantSlug}/items`);
   if (res.data) {
-    const forced = res.data.map(item => ({
+    const validItems = res.data.filter(isItemValid);
+    const forced = validItems.map(item => ({
       ...item,
       in_stock: true, // Force in_stock to be true for storefront presentation
     }));
@@ -171,6 +195,9 @@ export async function getAllItems(): Promise<ApiResponse<Item[]>> {
 export async function getItemById(itemId: string): Promise<ApiResponse<Item>> {
   const res = await safeFetch<Item>(`${BASE_URL}/items/${itemId}`);
   if (res.data) {
+    if (!isItemValid(res.data)) {
+      return { data: null, error: 'Item is not available (broken or missing assets)' };
+    }
     return {
       data: {
         ...res.data,
@@ -259,9 +286,10 @@ export interface CampaignDetail {
 export async function getCampaignById(campaignId: string): Promise<ApiResponse<CampaignDetail>> {
   const res = await safeFetch<CampaignDetail>(`${BASE_URL}/campaigns/${campaignId}`);
   if (res.data) {
+    const validFeaturedItems = res.data.featured_items.filter(isItemValid);
     const forced = {
       ...res.data,
-      featured_items: res.data.featured_items.map((fi) => ({
+      featured_items: validFeaturedItems.map((fi) => ({
         ...fi,
         in_stock: true, // Force in_stock to be true for featured items as well
       })),

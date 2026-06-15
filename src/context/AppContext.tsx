@@ -66,8 +66,21 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const storedWishlist = localStorage.getItem('clothify_wishlist');
       const storedProfile = localStorage.getItem('clothify_profile');
 
-      if (storedCart) setCart(JSON.parse(storedCart));
-      if (storedWishlist) setWishlist(JSON.parse(storedWishlist));
+      const brokenIds = ['ps-12', 'ps-15'];
+      const isIdBroken = (id: string) => {
+        return id.startsWith('as-') || id.startsWith('km-') || brokenIds.includes(id);
+      };
+
+      if (storedCart) {
+        const parsed = JSON.parse(storedCart) as CartItem[];
+        const filtered = parsed.filter(item => !isIdBroken(item.itemId));
+        setCart(filtered);
+      }
+      if (storedWishlist) {
+        const parsed = JSON.parse(storedWishlist) as Item[];
+        const filtered = parsed.filter(item => !isIdBroken(item.id));
+        setWishlist(filtered);
+      }
       if (storedProfile) setUserProfile(JSON.parse(storedProfile));
     } catch (e) {
       console.error('Failed to load localStorage data', e);
