@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
-import { Client } from '@gradio/client';
+
+function getAbsoluteUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api-hackathon.codedematrixtech.com';
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${baseUrl}${cleanPath}`;
+}
 
 export async function POST(request: Request) {
   // CORS Headers
@@ -19,85 +28,53 @@ export async function POST(request: Request) {
       );
     }
 
-    // Parse person image blob (handle data URIs or external URLs)
-    let personBlob: Blob;
-    if (personImageUrl.startsWith('data:')) {
-      const match = personImageUrl.match(/^data:(.*?);base64,(.*)$/);
-      if (!match) {
-        throw new Error('Invalid personImageUrl Data URL format');
-      }
-      const mimeType = match[1];
-      const base64Data = match[2];
-      const buffer = Buffer.from(base64Data, 'base64');
-      personBlob = new Blob([buffer], { type: mimeType });
-    } else {
-      const personResponse = await fetch(personImageUrl);
-      personBlob = await personResponse.blob();
-    }
-
-    // Parse garment image blob (handle data URIs or external URLs)
-    let garmentBlob: Blob;
-    if (garmentImageUrl.startsWith('data:')) {
-      const match = garmentImageUrl.match(/^data:(.*?);base64,(.*)$/);
-      if (!match) {
-        throw new Error('Invalid garmentImageUrl Data URL format');
-      }
-      const mimeType = match[1];
-      const base64Data = match[2];
-      const buffer = Buffer.from(base64Data, 'base64');
-      garmentBlob = new Blob([buffer], { type: mimeType });
-    } else {
-      const garmentResponse = await fetch(garmentImageUrl);
-      garmentBlob = await garmentResponse.blob();
-    }
-
-    let outputUrl = '';
-    const maxRetries = 3;
-    let attempt = 0;
-    let lastError: any = null;
-
-    while (attempt < maxRetries && !outputUrl) {
-      attempt++;
-      try {
-        console.log(`Connection attempt ${attempt} to zhengchong/CatVTON...`);
-        const client = await Client.connect('zhengchong/CatVTON', {
-          token: process.env.HF_TOKEN as any,
-        });
-        const result = await client.predict('/submit_function', {
-          person_image: {
-            background: personBlob,
-            layers: [],
-            composite: null,
-          },
-          cloth_image: garmentBlob,
-          cloth_type: 'overall',
-          num_inference_steps: 50,
-          guidance_scale: 2.5,
-          seed: 42,
-          show_type: 'result only',
-        }) as any;
-
-        if (result.data && result.data[0]) {
-          outputUrl = result.data[0].url || result.data[0].path || '';
-        }
-      } catch (err: any) {
-        console.warn(`Attempt ${attempt} failed:`, err.message || err);
-        lastError = err;
-        // Brief wait before retrying (exponential backoff representation)
-        if (attempt < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-        }
-      }
-    }
-
-    if (!outputUrl) {
-      throw new Error(
-        lastError?.message || 'Failed to retrieve try-on output URL from Hugging Face Gradio client after multiple attempts.'
+    const apiKey = process.env.AGNES_API_KEY;
+    if (!apiKey || apiKey === 'YOUR_API_KEY') {
+      return NextResponse.json(
+        { error: 'Agnes AI API Key (AGNES_API_KEY) is not configured. Please add it to your .env file.' },
+        { status: 500, headers: corsHeaders }
       );
     }
 
+    const absolutePersonUrl = getAbsoluteUrl(personImageUrl);
+    const absoluteGarmentUrl = getAbsoluteUrl(garmentImageUrl);
+
+    const endpoint = 'https://apihub.agnes-ai.com/v1/images/generations';
+    const payload = {
+      model: 'agnes-image-2.1-flash',
+      prompt: 'Virtual try-on: Fit the garment from the second image onto the person in the first image, seamlessly draping it onto their body while preserving the person\'s identity, facial features, posture, and background.',
+      size: '1024x768',
+      extra_body: {
+        image: [absolutePersonUrl, absoluteGarmentUrl],
+        response_format: 'url',
+      },
+    };
+
+    console.log('Sending request to Agnes AI image model...');
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorJson;
+      try {
+        errorJson = JSON.parse(errorText);
+      } catch (e) {}
+      const errorMessage = errorJson?.error?.message || errorJson?.error || errorText || `HTTP error ${response.status}`;
+      throw new Error(`Agnes AI API failed: ${errorMessage}`);
+    }
+
+    const result = await response.json();
+    const outputUrl = result?.data?.[0]?.url;
+
     if (!outputUrl) {
-      throw new Error('Failed to retrieve try-on output URL from Hugging Face Gradio client.');
+      throw new Error('Agnes AI returned a successful response, but no output image URL was found.');
     }
 
     return NextResponse.json({ output: outputUrl }, { status: 200, headers: corsHeaders });
