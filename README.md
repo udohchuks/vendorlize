@@ -38,8 +38,8 @@ Ensure you have the following installed on your machine:
 ## 🔌 Why No API Setup is Needed
 
 The project is designed to run completely out-of-the-box:
-- **Pre-configured Environment**: The application utilizes pre-defined sandbox parameters. If an `.env` file exists, it will use the default credentials. Otherwise, the app operates gracefully without them.
-- **Resilient Fallback Design**: If the external Hugging Face AI endpoints are unreachable, rate-limited, or run without tokens, the app automatically switches to **Interactive Draping Overlay Mode**. This ensures that the user experience is never blocked.
+- **Pre-configured Environment**: The application utilizes pre-defined sandbox parameters. If an `.env` file exists with `AGNES_API_KEY`, it will use it to call the Agnes AI image model. Otherwise, the app operates gracefully by utilizing the fallback mode.
+- **Resilient Fallback Design**: If the external Agnes AI endpoints are unreachable or run without keys, the app automatically switches to **Interactive Draping Overlay Mode**. This ensures that the user experience is never blocked.
 
 ---
 
@@ -57,30 +57,30 @@ graph TD
     E --> F
     F --> G[POST request to /api/tryon]
     G --> H{Try-on API Route}
-    H -- Step 1: Attempt CatVTON --> I[Connect to 'zhengchong/CatVTON' via Gradio Client]
+    H -- Step 1: Attempt Agnes AI --> I[Connect to 'apihub.agnes-ai.com' using model 'agnes-image-2.1-flash']
     I -- Success --> J[Return Synthesized AI Image]
-    I -- Fails / Offline --> K[Step 2: Fallback to 'yisol/IDM-VTON']
-    K -- Success --> J
-    K -- Fails / Offline --> L[Step 3: Local Fallback Mode]
-    L --> M[Initialize Client-Side Interactive Draping Overlay]
-    M --> N[User adjusts scale and position of garment layer manually]
-    J --> O[Simulation Render complete]
-    N --> O
-    O --> P[Share tailored coordinates & render link via WhatsApp direct to merchant]
+    I -- Fails / Offline --> K[Step 2: Local Fallback Mode]
+    K --> L[Initialize Client-Side Interactive Draping Overlay]
+    L --> M[User adjusts scale and position of garment layer manually]
+    J --> N[Simulation Render complete]
+    M --> N
+    N --> O[Share tailored coordinates & render link via WhatsApp direct to merchant]
 ```
 
 ### 1. The Processing Pipeline
 - **AI Body Scanner**: When a user uploads a portrait, a simulated scanner estimates body dimensions (Chest, Waist, Hips, Height, Inseam) based on alignment joints, writing tailored metrics directly to the user's local context.
 - **Route Handler (`/api/tryon`)**: The frontend calls this Next.js API route with a person's image and a garment image.
-- **Hugging Face Gradio Client**:
-  - **CatVTON**: The route first attempts to connect to `zhengchong/CatVTON` using the lightweight `@gradio/client` API wrapper to run diffusion-based virtual try-on inference.
-  - **IDM-VTON**: If CatVTON fails or times out, the system falls back to `yisol/IDM-VTON` to try matching the clothing item to the user's pose.
+- **Agnes AI Image Model API**:
+  - The route connects to Sapiens / Agnes AI API at `https://apihub.agnes-ai.com/v1/images/generations`.
+  - It utilizes the **Agnes Image 2.1 Flash** model (`agnes-image-2.1-flash`) with standard image-to-image parameters, passing the absolute URL/Data URIs of the person and garment inside the input `image` array in the `extra_body` payload.
+  - Returns the URL of the synthesized try-on result on success.
 
 ### 2. The Client-Side Fallback (Interactive Draping)
-If both AI models are offline or return an error, the studio recovers gracefully:
+If the AI model is offline or returns an error, the studio recovers gracefully:
 - It launches **Interactive Draping Mode** directly in the browser.
 - The garment is rendered as a transparent, high-quality layer overlaying the target silhouette.
 - The user can **drag to position** the garment and use a **precision slider** to scale the garment up/down to visually inspect the size fit.
 
 ### 3. Tailored Merchant Checkout
 Once the simulation is complete, the user can click **Share Fit**. This automatically compiles the custom tailoring coordinates (from their profile) and the try-on simulation link into a custom template and launches a pre-configured **WhatsApp message** directly to the merchant to place a bespoke order.
+

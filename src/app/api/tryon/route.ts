@@ -50,24 +50,53 @@ export async function POST(request: Request) {
       },
     };
 
-    console.log('Sending request to Agnes AI image model...');
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    let attempt = 0;
+    const maxRetries = 3;
+    let lastError: any = null;
+    let response: Response | null = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorJson;
+    while (attempt < maxRetries) {
+      attempt++;
       try {
-        errorJson = JSON.parse(errorText);
-      } catch (e) {}
-      const errorMessage = errorJson?.error?.message || errorJson?.error || errorText || `HTTP error ${response.status}`;
-      throw new Error(`Agnes AI API failed: ${errorMessage}`);
+        console.log(`Connection attempt ${attempt} to Agnes AI...`);
+        
+        // Node's native fetch uses undici which can hit ECONNRESET on socket reuse.
+        // We set 'Connection': 'close' to force close the connection and disable socket reuse.
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+            'Connection': 'close',
+          },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(60000), // 60s timeout
+        });
+
+        if (response.ok) {
+          break; // Success! Exit the loop.
+        } else {
+          const errorText = await response.text();
+          let errorJson;
+          try {
+            errorJson = JSON.parse(errorText);
+          } catch (e) {}
+          const errorMessage = errorJson?.error?.message || errorJson?.error || errorText || `HTTP error ${response.status}`;
+          lastError = new Error(`Agnes AI API failed: ${errorMessage}`);
+        }
+      } catch (err: any) {
+        console.warn(`Attempt ${attempt} failed:`, err.message || err);
+        lastError = err;
+        
+        // Wait 2.5 seconds before retrying
+        if (attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, 2500));
+        }
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw lastError || new Error('Failed to retrieve try-on output from Agnes AI after multiple attempts.');
     }
 
     const result = await response.json();
