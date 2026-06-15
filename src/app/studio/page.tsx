@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { getImageUrl, buildWhatsAppLink, formatPrice } from '@/lib/api';
 import { Toast } from '@/components/Toast';
@@ -51,8 +52,9 @@ const MODEL_AVATARS: Record<'male' | 'female', Record<string, string>> = {
   },
 };
 
-export default function StudioPage() {
+function StudioPageContent() {
   const { userProfile, wishlist, merchants, saveProfile } = useApp();
+  const searchParams = useSearchParams();
 
   // States
   const [viewMode, setViewMode] = useState<'full' | 'upper'>('full');
@@ -61,6 +63,18 @@ export default function StudioPage() {
   const [fitResult, setFitResult] = useState<string | null>(null); // Url of tried on garment
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  // Auto-select garment based on search parameters (e.g. from TikTok feed try-on click)
+  useEffect(() => {
+    const itemId = searchParams.get('itemId');
+    if (itemId && wishlist.length > 0) {
+      const idx = wishlist.findIndex((item) => item.id === itemId);
+      if (idx !== -1) {
+        setSelectedGarmentIndex(idx);
+        setFitResult(null);
+      }
+    }
+  }, [searchParams, wishlist]);
   
   // Custom Photo Upload States
   const [modelSource, setModelSource] = useState<'avatar' | 'upload'>('avatar');
@@ -745,5 +759,17 @@ export default function StudioPage() {
         onClose={() => setToastMessage(null)}
       />
     </div>
+  );
+}
+
+export default function StudioPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 bg-[#111111] min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-2 border-[#D4A853] border-t-transparent animate-spin" />
+      </div>
+    }>
+      <StudioPageContent />
+    </Suspense>
   );
 }

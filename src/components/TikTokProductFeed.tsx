@@ -55,8 +55,8 @@ export const TikTokProductFeed: React.FC<TikTokProductFeedProps> = ({
     if (!wishlisted) {
       toggleWishlist(item);
     }
-    // Navigate to studio
-    router.push('/studio');
+    // Navigate to studio with search param
+    router.push(`/studio?itemId=${item.id}`);
   };
 
   const handleShare = (e: React.MouseEvent, item: Item) => {
