@@ -72,6 +72,10 @@ function StudioPageContent() {
       if (idx !== -1) {
         setSelectedGarmentIndex(idx);
         setFitResult(null);
+        // Clear the search param from the URL to prevent overriding future manual selections
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
       }
     }
   }, [searchParams, wishlist]);
