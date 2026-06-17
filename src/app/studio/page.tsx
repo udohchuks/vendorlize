@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { getImageUrl, buildWhatsAppLink, formatPrice } from '@/lib/api';
+import { parseTryOnApiResult, type TryOnMode, type TryOnDisplayStatus } from '@/lib/tryOnResponse';
+import {
+  formatProcessingMessage,
+  nextDisplayStatusAfterApi,
+  shouldShowAiResult,
+  shouldShowFallbackOverlay,
+} from '@/lib/tryOnDisplay';
+import { processPortraitUpload, UPLOAD_REQUIREMENTS_COPY } from '@/lib/uploadValidation';
 import { Toast } from '@/components/Toast';
 
 // Silhouette outlines mapping
@@ -61,6 +69,13 @@ function StudioPageContent() {
   const [selectedGarmentIndex, setSelectedGarmentIndex] = useState<number>(0);
   const [isFitting, setIsFitting] = useState<boolean>(false);
   const [fitResult, setFitResult] = useState<string | null>(null); // Url of tried on garment
+  const [tryOnMode, setTryOnMode] = useState<TryOnMode | null>(null);
+  const [displayStatus, setDisplayStatus] = useState<TryOnDisplayStatus>('idle');
+  const [tryOnError, setTryOnError] = useState<string | null>(null);
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const [processingStartedAt, setProcessingStartedAt] = useState<number | null>(null);
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const [resultImageLoaded, setResultImageLoaded] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
@@ -79,6 +94,14 @@ function StudioPageContent() {
       }
     }
   }, [searchParams, wishlist]);
+
+  useEffect(() => {
+    if (displayStatus !== 'processing' || !processingStartedAt) return;
+    const id = window.setInterval(() => {
+      setElapsedSec(Math.floor((Date.now() - processingStartedAt) / 1000));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [displayStatus, processingStartedAt]);
   
   // Custom Photo Upload States
   const [modelSource, setModelSource] = useState<'avatar' | 'upload'>('avatar');
@@ -150,29 +173,25 @@ function StudioPageContent() {
     }, 3200);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      handleShowToast('Image size exceeds 5MB limit.', 'error');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
+    try {
+      const { dataUrl, warnings } = await processPortraitUpload(file);
       setUploadedImage(dataUrl);
-      setFitResult(null); // Reset try on for new photo
-      setOverlayPos({ x: 0, y: 0 });
-      setOverlayScale(0.95);
+      resetTryOnState();
       handleShowToast('Fitting photo loaded. Initializing scanner...', 'success');
+      if (warnings.length > 0) {
+        handleShowToast(warnings[0], 'error');
+      }
       startBodyScan(dataUrl);
-    };
-    reader.onerror = () => {
-      handleShowToast('Failed to read image file.', 'error');
-    };
-    reader.readAsDataURL(file);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to read image file.';
+      handleShowToast(message, 'error');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -193,6 +212,29 @@ function StudioPageContent() {
     setIsDragging(false);
   };
 
+  const resetTryOnState = () => {
+    setFitResult(null);
+    setTryOnMode(null);
+    setDisplayStatus('idle');
+    setTryOnError(null);
+    setFallbackReason(null);
+    setProcessingStartedAt(null);
+    setElapsedSec(0);
+    setResultImageLoaded(false);
+    setOverlayPos({ x: 0, y: 0 });
+    setOverlayScale(0.95);
+  };
+
+  const activateLocalPreview = (garmentImageUrl: string, reason: string) => {
+    setFitResult(garmentImageUrl);
+    setTryOnMode('fallback');
+    setDisplayStatus('success');
+    setFallbackReason(reason);
+    setTryOnError(null);
+    setOverlayPos({ x: 0, y: 0 });
+    setOverlayScale(0.95);
+  };
+
   const handleTryOn = async () => {
     if (wishlist.length === 0) return;
     if (modelSource === 'upload' && !uploadedImage) {
@@ -201,7 +243,14 @@ function StudioPageContent() {
     }
     
     setIsFitting(true);
+    setDisplayStatus('processing');
+    setTryOnError(null);
+    setFallbackReason(null);
+    setProcessingStartedAt(Date.now());
+    setElapsedSec(0);
+    setResultImageLoaded(false);
     setFitResult(null);
+    setTryOnMode(null);
 
     const garment = wishlist[selectedGarmentIndex];
     const garmentImageUrl = garment.image_urls && garment.image_urls.length > 0
@@ -226,33 +275,59 @@ function StudioPageContent() {
         body: JSON.stringify({ personImageUrl, garmentImageUrl }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Try-on server returned status ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      const parsed = parseTryOnApiResult(data, res.status, garmentImageUrl);
+
+      if (!parsed.ok || !parsed.output) {
+        throw new Error(parsed.error || 'AI Try-on failed. Please try again.');
       }
 
-      const data = await res.json();
-      if (data.error) {
-        throw new Error(data.error);
-      }
+      setFitResult(parsed.output);
+      setTryOnMode(parsed.mode || 'ai');
+      setDisplayStatus(nextDisplayStatusAfterApi(true, parsed.mode));
 
-      if (data.output) {
-        setFitResult(data.output);
-        handleShowToast('AI Virtual Try-on Completed!', 'success');
+      if (parsed.mode === 'fallback') {
+        setFallbackReason(parsed.reason || null);
+        setOverlayPos({ x: 0, y: 0 });
+        setOverlayScale(0.95);
+        handleShowToast(
+          parsed.reason || 'AI unavailable — showing local draping preview.',
+          'error'
+        );
       } else {
-        throw new Error('No output image URL returned from AI.');
+        setFallbackReason(null);
+        handleShowToast('AI Virtual Try-on Completed!', 'success');
       }
     } catch (err: any) {
       console.error('AI Try-on failed:', err);
+      setDisplayStatus('failed');
+      setTryOnError(err.message || 'AI Try-on failed. Please try again.');
       handleShowToast(err.message || 'AI Try-on failed. Please try again.', 'error');
     } finally {
       setIsFitting(false);
+      setProcessingStartedAt(null);
     }
   };
 
   const handleResetFit = () => {
-    setFitResult(null);
-    setOverlayPos({ x: 0, y: 0 });
-    setOverlayScale(0.95);
+    resetTryOnState();
+  };
+
+  const handleAiResultImageError = () => {
+    const garment = wishlist[selectedGarmentIndex];
+    const garmentImageUrl =
+      garment.image_urls && garment.image_urls.length > 0
+        ? getImageUrl(garment.image_urls[0])
+        : '';
+    setDisplayStatus('image_load_failed');
+    setTryOnError('The AI result image could not be loaded.');
+    if (garmentImageUrl) {
+      activateLocalPreview(
+        garmentImageUrl,
+        'AI image failed to load — showing local draping preview instead.'
+      );
+      handleShowToast('AI image failed to load. Switched to local preview.', 'error');
+    }
   };
 
   const handleShareFit = () => {
@@ -275,7 +350,7 @@ function StudioPageContent() {
       text += "- Inseam: *" + userProfile.measurements.inseam + " inches*\n\n";
     }
 
-    if (fitResult && fitResult !== activeGarment.image_urls?.[0] && fitResult !== getImageUrl(activeGarment.image_urls?.[0] || '')) {
+    if (fitResult && tryOnMode === 'ai') {
       text += "*AI Simulation Render Fit Link*:\n" + fitResult + "\n\n";
     }
 
@@ -386,14 +461,31 @@ function StudioPageContent() {
             {/* Subtle grid background */}
             <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(#FAF0E6_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
             
-            {isFitting ? (
-              // Simulation Processing loader screen
-              <div className="flex flex-col items-center justify-center space-y-5 px-6 text-center z-10 animate-pulse pointer-events-none">
+            {displayStatus === 'processing' || isFitting ? (
+              <div className="flex flex-col items-center justify-center space-y-5 px-6 text-center z-10 pointer-events-none">
                 <div className="w-16 h-16 rounded-full border-2 border-[#D4A853] border-t-transparent animate-spin" />
                 <div className="space-y-1">
                   <span className="text-[10px] font-extrabold tracking-widest text-[#D4A853] uppercase">AI Bespoke Sizing Slicing</span>
-                  <p className="text-xs text-[#C9B99A]/80 font-medium">Aligning shoulder points and waist contours...</p>
+                  <p className="text-xs text-[#C9B99A]/80 font-medium">{formatProcessingMessage(elapsedSec)}</p>
+                  <p className="text-[10px] text-[#C9B99A]/50 font-semibold">{elapsedSec}s elapsed</p>
                 </div>
+              </div>
+            ) : displayStatus === 'failed' ? (
+              <div className="flex flex-col items-center justify-center space-y-4 px-6 text-center z-10">
+                <div className="w-14 h-14 rounded-full border border-red-500/40 bg-red-500/10 flex items-center justify-center text-red-400">
+                  <span className="text-xl font-black">!</span>
+                </div>
+                <div className="space-y-1 max-w-xs">
+                  <span className="text-[10px] font-extrabold tracking-widest text-red-400 uppercase">Try-on Failed</span>
+                  <p className="text-xs text-[#C9B99A]/85 font-medium">{tryOnError || 'Something went wrong.'}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTryOn}
+                  className="px-4 py-2 bg-[#D4A853] text-[#0A0A0A] text-[10px] font-black rounded-xl uppercase tracking-wider"
+                >
+                  Retry Try-on
+                </button>
               </div>
             ) : isScanning ? (
               // AI Body Scanner Overlay
@@ -433,15 +525,23 @@ function StudioPageContent() {
             ) : (
               // Viewport Content
               <div className="w-full h-full relative flex items-center justify-center animate-fade-in overflow-hidden">
-                {/* Render Result (AI Synthesized Image) if Try-on succeeded */}
-                {fitResult && fitResult !== activeGarment.image_urls?.[0] && fitResult !== getImageUrl(activeGarment.image_urls?.[0] || '') ? (
-                  <img
-                    src={fitResult}
-                    alt="AI Tailored Fit Result"
-                    className="absolute inset-0 w-full h-full object-contain animate-fade-in"
-                  />
+                {shouldShowAiResult(tryOnMode, fitResult) ? (
+                  <>
+                    {!resultImageLoaded && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3 z-10 bg-[#0A0A0A]/80">
+                        <div className="w-10 h-10 rounded-full border-2 border-[#D4A853] border-t-transparent animate-spin" />
+                        <p className="text-[10px] text-[#C9B99A]/80 font-semibold uppercase tracking-wider">Loading AI result...</p>
+                      </div>
+                    )}
+                    <img
+                      src={fitResult!}
+                      alt="AI Tailored Fit Result"
+                      onLoad={() => setResultImageLoaded(true)}
+                      onError={handleAiResultImageError}
+                      className={`absolute inset-0 w-full h-full object-contain animate-fade-in ${resultImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                  </>
                 ) : (
-                  /* STANDBY OR FALLBACK OVERLAY VIEW */
                   <>
                     {/* Base Background Image */}
                     {modelSource === 'upload' && uploadedImage ? (
@@ -476,7 +576,7 @@ function StudioPageContent() {
                         />
                         
                         {/* Wireframe Outline visualizer overlay */}
-                        {!fitResult && (
+                        {!shouldShowFallbackOverlay(tryOnMode, fitResult) && (
                           <div className="absolute inset-0 bg-[#D4A853]/5 flex items-center justify-center pointer-events-none">
                             <div className="p-4 bg-[#0A0A0A]/40 backdrop-blur-[1px] border border-[#D4A853]/20 rounded-2xl shadow-lg scale-90">
                               {userProfile.gender === 'male' ? (
@@ -491,8 +591,7 @@ function StudioPageContent() {
                       </div>
                     )}
 
-                    {/* Draggable/Scalable Fallback Garment Overlay */}
-                    {fitResult && (fitResult === activeGarment.image_urls?.[0] || fitResult === getImageUrl(activeGarment.image_urls?.[0] || '')) && (
+                    {shouldShowFallbackOverlay(tryOnMode, fitResult) && (
                       <div
                         onPointerDown={handlePointerDown}
                         onPointerMove={handlePointerMove}
@@ -506,7 +605,7 @@ function StudioPageContent() {
                         className="w-full max-w-[210px] rounded-2xl overflow-hidden border border-[#D4A853]/60 shadow-[0_0_32px_rgba(212,168,83,0.3)] bg-transparent absolute z-20 select-none animate-fade-in"
                       >
                         <img
-                          src={fitResult}
+                          src={fitResult!}
                           alt="Fallback Draping Garment"
                           className="w-full h-full object-contain pointer-events-none select-none"
                         />
@@ -516,26 +615,33 @@ function StudioPageContent() {
                   </>
                 )}
 
-                {/* Standby Description overlay */}
-                {!fitResult && modelSource === 'avatar' && (
+                {displayStatus === 'idle' && !fitResult && modelSource === 'avatar' && (
                   <div className="absolute bottom-4 left-4 right-4 bg-[#111111]/90 backdrop-blur-md border border-[#1F1C1A] rounded-2xl p-3 text-center shadow-lg pointer-events-none">
                     <span className="text-[8px] font-extrabold tracking-wider text-[#C9B99A]/50 uppercase">STUDIO STANDBY</span>
                     <p className="text-[10px] text-[#C9B99A]/75 font-semibold mt-0.5">Select a customized garment on the right to render.</p>
                   </div>
                 )}
 
-                {/* Completed Verdict Overlay */}
-                {fitResult && (
+                {fitResult && displayStatus === 'success' && (
                   <div className="absolute bottom-4 left-4 right-4 bg-[#111111]/95 backdrop-blur-md border border-[#1F1C1A] rounded-2xl p-3.5 flex justify-between items-center shadow-lg z-30 pointer-events-none">
                     <div className="space-y-0.5 text-left">
                       <span className="text-[8px] font-black text-[#D4A853] uppercase tracking-widest">FIT VERDICT</span>
                       <h4 className="text-[10px] font-bold text-[#FAF0E6] truncate uppercase max-w-[140px]">{activeGarment.name}</h4>
                     </div>
-                    <span className="bg-[#25D366]/15 text-[#25D366] border border-[#25D366]/30 text-[8px] font-black tracking-widest px-2.5 py-1 rounded-md uppercase">
-                      {fitResult === activeGarment.image_urls?.[0] || fitResult === getImageUrl(activeGarment.image_urls?.[0] || '')
-                        ? 'Interactive Overlay'
-                        : 'Bespoke Fit Perfect'}
+                    <span className={`text-[8px] font-black tracking-widest px-2.5 py-1 rounded-md uppercase border ${
+                      tryOnMode === 'fallback'
+                        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                        : 'bg-[#25D366]/15 text-[#25D366] border-[#25D366]/30'
+                    }`}>
+                      {tryOnMode === 'fallback' ? 'Local Preview Only' : 'AI Render Complete'}
                     </span>
+                  </div>
+                )}
+
+                {tryOnMode === 'fallback' && fallbackReason && (
+                  <div className="absolute top-4 left-4 right-4 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 z-30 pointer-events-none">
+                    <p className="text-[9px] font-black text-amber-300 uppercase tracking-wider">Local draping preview — not final AI output</p>
+                    <p className="text-[10px] text-[#C9B99A]/80 mt-1">{fallbackReason}</p>
                   </div>
                 )}
               </div>
@@ -543,7 +649,7 @@ function StudioPageContent() {
           </div>
 
           {/* Interactive Draping Overlay Scale Slider (Visible only in fallback overlay mode) */}
-          {fitResult && (fitResult === activeGarment.image_urls?.[0] || fitResult === getImageUrl(activeGarment.image_urls?.[0] || '')) && (
+          {shouldShowFallbackOverlay(tryOnMode, fitResult) && (
             <div className="bg-[#0A0A0A] border border-[#1F1C1A] rounded-2xl p-4 space-y-3 shadow-md animate-fade-in">
               <div className="flex justify-between items-center text-[10px] font-extrabold tracking-wider text-[#C9B99A] uppercase">
                 <span>Garment Draping Scale</span>
@@ -610,7 +716,7 @@ function StudioPageContent() {
               <button
                 onClick={() => {
                   setModelSource('avatar');
-                  handleResetFit();
+                  resetTryOnState();
                 }}
                 className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
                   modelSource === 'avatar' ? 'bg-gradient-to-r from-[#D4A853] to-[#C9B99A] text-[#0A0A0A]' : 'text-[#C9B99A]'
@@ -624,7 +730,7 @@ function StudioPageContent() {
               <button
                 onClick={() => {
                   setModelSource('upload');
-                  handleResetFit();
+                  resetTryOnState();
                 }}
                 className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
                   modelSource === 'upload' ? 'bg-gradient-to-r from-[#D4A853] to-[#C9B99A] text-[#0A0A0A]' : 'text-[#C9B99A]'
@@ -649,7 +755,7 @@ function StudioPageContent() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     onChange={handleImageUpload}
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                   />
@@ -661,9 +767,14 @@ function StudioPageContent() {
                   <div className="space-y-1">
                     <h4 className="text-[11px] font-black text-[#FAF0E6] uppercase tracking-wider">Select fitting portrait</h4>
                     <p className="text-[9px] text-[#C9B99A]/50 max-w-[190px] leading-relaxed font-semibold">
-                      Use a frontal self-photo. The AI Body Scanner will auto-calculate your measurements.
+                      Use a frontal portrait with your full torso visible. The AI Body Scanner will auto-calculate your measurements.
                     </p>
                   </div>
+                  <ul className="text-[8px] text-[#C9B99A]/45 space-y-1 text-left max-w-[220px]">
+                    {UPLOAD_REQUIREMENTS_COPY.map((rule) => (
+                      <li key={rule}>• {rule}</li>
+                    ))}
+                  </ul>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -720,7 +831,7 @@ function StudioPageContent() {
                       key={item.id}
                       onClick={() => {
                         setSelectedGarmentIndex(idx);
-                        setFitResult(null);
+                        resetTryOnState();
                       }}
                       className={`w-16 h-20 rounded-xl bg-[#181615] overflow-hidden border flex-shrink-0 flex items-center justify-center transition-all duration-300 relative ${
                         isSelected
